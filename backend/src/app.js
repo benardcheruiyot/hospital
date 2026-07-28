@@ -1,4 +1,4 @@
-require('express-async-errors'); // must be required before routes are used
+// express-async-errors is not required with Express 5+ (async handlers handled natively)
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
