@@ -62,6 +62,7 @@ export default function AppointmentsPage() {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [specialty, setSpecialty] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -294,8 +295,19 @@ export default function AppointmentsPage() {
     };
   }, [sortedAppointments]);
 
-  const hasDoctors = doctors.length > 0;
-  const canSchedule = hasDoctors && (!registrationLoading && registrationStatus === 'verified');
+  const filteredDoctors = useMemo(() => {
+    if (!specialty) return doctors;
+    return doctors.filter((d) => (d.specialty || '').toLowerCase() === specialty.toLowerCase());
+  }, [doctors, specialty]);
+
+  const specialties = useMemo(() => {
+    const s = Array.from(new Set(doctors.map((d) => (d.specialty || 'General Practice').trim()))).filter(Boolean);
+    return s.sort();
+  }, [doctors]);
+
+  const hasDoctorsForSelection = filteredDoctors.length > 0;
+
+  const canSchedule = hasDoctorsForSelection && (!registrationLoading && registrationStatus === 'verified');
 
   return (
     <AppShell>
@@ -408,21 +420,35 @@ export default function AppointmentsPage() {
             )}
             <div className="grid grid-2">
               <div className="form-group">
-                <label>Doctor</label>
-                <select
-                  name="doctorId"
-                  required
-                  value={form.doctorId}
-                  onChange={handleChange}
-                  disabled={!hasDoctors}
-                >
-                  <option value="">Select a doctor...</option>
-                  {doctors.map((doc) => (
-                    <option key={doc.id} value={doc.id}>
-                      Dr. {doc.User?.firstName} {doc.User?.lastName} - {doc.specialty}
+                <label>Specialty</label>
+                <select name="specialty" value={specialty} onChange={(e) => { setSpecialty(e.target.value); setForm((f)=>({ ...f, doctorId: '' })); }} disabled={!doctors.length}>
+                  <option value="">Select a specialty...</option>
+                  {specialties.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
                     </option>
                   ))}
                 </select>
+
+                {specialty && (
+                  <>
+                    <label style={{ marginTop: 8 }}>Doctor</label>
+                    <select
+                      name="doctorId"
+                      required
+                      value={form.doctorId}
+                      onChange={handleChange}
+                      disabled={!hasDoctorsForSelection}
+                    >
+                      <option value="">Select a doctor...</option>
+                      {filteredDoctors.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          Dr. {doc.User?.firstName} {doc.User?.lastName} - {doc.specialty}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
                 {doctorAvailability && (
                   <div className="field-hint" style={{ marginTop: 8 }}>
                     Available days:{' '}
