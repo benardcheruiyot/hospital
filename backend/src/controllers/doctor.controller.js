@@ -110,6 +110,21 @@ const listDoctors = async (req, res) => {
   res.json({ success: true, data: mapped });
 };
 
+// GET /api/doctors/specialties
+const listSpecialties = async (req, res) => {
+  // Group by specialty to get distinct values
+  const rows = await Doctor.findAll({
+    attributes: ['specialty'],
+    group: ['specialty'],
+    order: [['specialty', 'ASC']],
+  });
+
+  const specialties = rows.map((r) => (r.specialty || 'General Practice'));
+  // Deduplicate and normalize
+  const unique = Array.from(new Set(specialties)).map((s) => (s || 'General Practice'));
+  res.json({ success: true, data: unique.sort() });
+};
+
 // GET /api/doctors/:id
 const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findByPk(req.params.id, {

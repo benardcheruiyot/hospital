@@ -37,6 +37,7 @@ router.put(
 );
 router.get('/me', authorize('doctor'), doctorController.getMyProfile);
 router.put('/me', authorize('doctor'), doctorController.updateMyProfile);
+router.get('/specialties', doctorController.listSpecialties);
 router.get('/', doctorController.listDoctors);
 router.get('/:id/available-slots', doctorController.getDoctorAvailableSlots);
 router.get('/:id/availability', doctorController.getDoctorAvailability);
