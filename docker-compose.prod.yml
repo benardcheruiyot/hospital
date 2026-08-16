@@ -26,7 +26,7 @@ services:
         max-file: "3"
 
   backend:
-    image: ghcr.io/benardcheruiyot/hospital/backend:latest
+    image: ${BACKEND_IMAGE:-ghcr.io/benardcheruiyot/hospital/backend:latest}
     restart: always
     depends_on:
       db:
@@ -62,7 +62,7 @@ services:
         max-file: "3"
 
   frontend:
-    image: ghcr.io/benardcheruiyot/hospital/frontend:latest
+    image: ${FRONTEND_IMAGE:-ghcr.io/benardcheruiyot/hospital/frontend:latest}
     restart: always
     depends_on:
       - backend

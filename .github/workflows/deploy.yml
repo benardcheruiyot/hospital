@@ -86,13 +86,18 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
+          IMAGE_TAG="$(echo "${{ steps.refs.outputs.ref }}" | tr '/' '-')"
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} <<EOF
           cd ~/hospital-platform
 
           if [ "\$ENVIRONMENT" = "staging" ]; then
             COMPOSE_FILE="docker-compose.staging.yml"
+            export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:develop"
+            export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:develop"
           else
             COMPOSE_FILE="docker-compose.prod.yml"
+            export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:\$IMAGE_TAG"
+            export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:\$IMAGE_TAG"
           fi
 
           docker compose -f "\$COMPOSE_FILE" pull
