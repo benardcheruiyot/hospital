@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -41,13 +40,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isGoogleReady()) {
-      setGoogleReady(true);
       return;
     }
 
     const interval = window.setInterval(() => {
       if (isGoogleReady()) {
-        setGoogleReady(true);
         clearInterval(interval);
       }
     }, 250);

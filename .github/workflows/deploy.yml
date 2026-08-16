@@ -1,6 +1,10 @@
 name: Deploy to Production
 
 on:
+  workflow_run:
+    workflows: ["Build & Push Docker Images"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -15,15 +19,33 @@ on:
           - staging
           - production
 
+concurrency:
+  group: deploy-${{ github.ref_name || github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
-    
+    permissions:
+      contents: read
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'production' }}
+
     steps:
+      - name: Resolve deploy ref
+        id: refs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ref=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "env=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
+            echo "env=production" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ steps.refs.outputs.ref }}
       
       - name: Validate environment variables
         run: |
@@ -63,47 +85,39 @@ jobs:
       
       - name: Deploy with Docker Compose
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          ENVIRONMENT="${{ steps.refs.outputs.env }}"
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} <<EOF
           cd ~/hospital-platform
-          
-          # Select the right compose file
-          if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+
+          if [ "\$ENVIRONMENT" = "staging" ]; then
             COMPOSE_FILE="docker-compose.staging.yml"
           else
             COMPOSE_FILE="docker-compose.prod.yml"
           fi
-          
-          # Pull latest images
-          docker compose -f $COMPOSE_FILE pull
-          
-          # Start services
-          docker compose -f $COMPOSE_FILE up -d
-          
-          # Wait for services to be healthy
+
+          docker compose -f "\$COMPOSE_FILE" pull
+          docker compose -f "\$COMPOSE_FILE" up -d
           sleep 10
-          docker compose -f $COMPOSE_FILE ps
-          
-          # Show logs
-          docker compose -f $COMPOSE_FILE logs --tail=20
+          docker compose -f "\$COMPOSE_FILE" ps
+          docker compose -f "\$COMPOSE_FILE" logs --tail=20
           EOF
-      
+
       - name: Verify deployment
         run: |
           PROTOCOL="https"
-          if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+          if [ "${{ steps.refs.outputs.env }}" = "staging" ]; then
             PROTOCOL="http"
           fi
-          
-          # Wait for the application to be ready
+
           for i in {1..30}; do
-            if curl -f $PROTOCOL://${{ secrets.DEPLOY_HOST }}/api/health 2>/dev/null; then
+            if curl -f "$PROTOCOL://${{ secrets.DEPLOY_HOST }}/api/health" 2>/dev/null; then
               echo "✓ Application is healthy"
               exit 0
             fi
             echo "Waiting for application to be ready... ($i/30)"
             sleep 2
           done
-          
+
           echo "✗ Deployment verification failed"
           exit 1
       
@@ -118,8 +132,10 @@ jobs:
         with:
           script: |
             const status = context.job.status === 'success' ? 'success' : 'failure';
-            const message = `Deployment to ${{ github.event.inputs.environment }} ${{ github.event.inputs.version }}: ${status}`;
-            
+            const environment = '${{ steps.refs.outputs.env }}';
+            const ref = '${{ steps.refs.outputs.ref }}';
+            const message = `Deployment to ${environment} (${ref}): ${status}`;
+
             github.rest.issues.createComment({
               issue_number: context.issue.number || 1,
               owner: context.repo.owner,

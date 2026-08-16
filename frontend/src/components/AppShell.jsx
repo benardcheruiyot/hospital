@@ -46,7 +46,6 @@ export default function AppShell({ children }) {
 
   const toggleMenu = () => setMenuOpen((value) => !value);
   const closeMenu = () => setMenuOpen(false);
-  const initials = user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() : '';
 
   return (
     <div className="app-shell">
