@@ -1448,6 +1448,22 @@ textarea:focus {
 
   .reference-hero-art {
     min-height: 220px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .reference-art-card {
+    position: static;
+    width: auto;
+    margin: 12px 14px 0;
+  }
+
+  .reference-art-card-top,
+  .reference-art-card-bottom {
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
   }
 
   .reference-features,
