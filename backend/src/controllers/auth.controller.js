@@ -1,4 +1,4 @@
-const { User, Patient, Doctor } = require('../models');
+const { User, Patient } = require('../models');
 const { signToken } = require('../utils/jwt');
 const ApiError = require('../utils/ApiError');
 

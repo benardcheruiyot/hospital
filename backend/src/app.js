@@ -48,6 +48,8 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+app.get('/health', (req, res) => res.json({ success: true, message: 'API is healthy' }));
+
 app.use('/api', routes);
 
 app.use(notFound);

@@ -38,6 +38,10 @@ router.put(
 router.get('/me', authorize('doctor'), doctorController.getMyProfile);
 router.put('/me', authorize('doctor'), doctorController.updateMyProfile);
 router.get('/specialties', doctorController.listSpecialties);
+router.get('/credentials', authorize('admin'), doctorController.listDoctorCredentials);
+router.delete('/:id', authorize('admin'), doctorController.deactivateDoctor);
+router.put('/:id/restore', authorize('admin'), doctorController.restoreDoctor);
+router.put('/restore-inactive', authorize('admin'), doctorController.restoreAllInactiveDoctors);
 router.get('/', doctorController.listDoctors);
 router.get('/:id/available-slots', doctorController.getDoctorAvailableSlots);
 router.get('/:id/availability', doctorController.getDoctorAvailability);

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import Sidebar from './Sidebar.jsx';
+import Topbar from './Topbar.jsx';
 
 const NAV_ITEMS = {
   patient: [
@@ -48,65 +50,9 @@ export default function AppShell({ children }) {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div style={{display: 'flex', gap: 12, alignItems: 'center'}}>
-            <div className="workspace-brand-mark">✚</div>
-            <div>
-              <p className="sidebar-kicker">Digital Hospital Platform</p>
-              <h1 className="sidebar-brand-title">TERRALINK Health</h1>
-            </div>
-          </div>
-          <p className="sidebar-copy">
-            Your connected care workspace for patients, providers, and administrators.
-          </p>
-        </div>
-        <nav>
-          {items.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'active' : '')}>
-              <span className="nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-              {item.to === '/messages' && unreadMessages > 0 && <span className="nav-badge" />}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="sidebar-profile-card">
-          <div className="sidebar-profile-top">
-            <div className="sidebar-profile-avatar">{initials}</div>
-            <div className="sidebar-profile-meta">
-              <strong>{user?.firstName} {user?.lastName}</strong>
-              <span>{roleLabel}</span>
-            </div>
-          </div>
-          <button className="btn btn-secondary sidebar-logout-button" type="button" onClick={handleLogout}>
-            Sign out
-          </button>
-        </div>
-      </aside>
+      <Sidebar user={user} items={items} unreadMessages={unreadMessages} onLogout={handleLogout} />
       <main className="main-content">
-        <div className="topbar">
-              <div className="topbar-left">
-            <button className="mobile-menu-button" type="button" onClick={toggleMenu} aria-expanded={menuOpen} aria-label="Open navigation menu">
-              <span className="menu-icon">☰</span>
-            </button>
-            <div className="topbar-brand">
-              <div className="topbar-brand-mark">✚</div>
-              <div>
-                <div className="topbar-title">TERRALINK Health</div>
-                <div className="topbar-subtitle">{roleLabel}</div>
-              </div>
-            </div>
-          </div>
-          <div className="topbar-right">
-            <div className="profile-badge" aria-label="User profile">
-              {initials}
-            </div>
-            <div className="profile-summary">
-              <div>{user?.firstName} {user?.lastName}</div>
-              <div className="profile-summary-role">{roleLabel}</div>
-            </div>
-          </div>
-        </div>
+        <Topbar user={user} roleLabel={roleLabel} toggleMenu={toggleMenu} menuOpen={menuOpen} />
         {menuOpen && <div className="mobile-menu-backdrop" onClick={closeMenu} />}
         <aside className={`mobile-menu-drawer ${menuOpen ? 'open' : ''}`} aria-hidden={!menuOpen}>
           <div className="mobile-menu-header">
@@ -118,7 +64,7 @@ export default function AppShell({ children }) {
               ×
             </button>
           </div>
-          <nav>
+          <nav aria-label="Mobile navigation">
             {items.map((item) => (
               <NavLink
                 key={item.to}

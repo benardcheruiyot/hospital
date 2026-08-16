@@ -7,7 +7,20 @@ export function connectSocket(token) {
   socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
     auth: { token },
     autoConnect: true,
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
   });
+
+  socket.on('connect_error', (err) => {
+    console.warn('Socket connect error:', err.message);
+  });
+
+  socket.on('reconnect_attempt', (attempt) => {
+    console.info(`Socket reconnect attempt ${attempt}`);
+  });
+
   return socket;
 }
 

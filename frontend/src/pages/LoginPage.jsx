@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { registerGoogleCallback, initGoogle, promptGoogle, isGoogleReady } from '../utils/google';
+import Button from '../components/ui/Button.jsx';
+import Card from '../components/ui/Card.jsx';
 
 export default function LoginPage() {
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [portal, setPortal] = useState(searchParams.get('portal') === 'staff' ? 'staff' : 'patient');
+  const portalParam = searchParams.get('portal');
+  const initialPortal = ['staff', 'admin', 'doctor'].includes(portalParam) ? 'staff' : 'patient';
+  const [portal, setPortal] = useState(initialPortal);
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -27,6 +33,28 @@ export default function LoginPage() {
     }
   };
 
+  useEffect(() => {
+    if (portalParam === 'admin') {
+      navigate('/admin');
+    }
+  }, [navigate, portalParam]);
+
+  useEffect(() => {
+    if (isGoogleReady()) {
+      setGoogleReady(true);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      if (isGoogleReady()) {
+        setGoogleReady(true);
+        clearInterval(interval);
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handlePortalChange = (nextPortal) => {
     setPortal(nextPortal);
     setSearchParams({ portal: nextPortal });
@@ -35,29 +63,42 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = () => {
     setError('');
-    if (!window.google?.accounts?.id || !import.meta.env.VITE_GOOGLE_CLIENT_ID) {
-      setError('Google sign-in is unavailable right now.');
+
+    const googlePortal = portal === 'staff' ? 'staff' : 'patient';
+    if (searchParams.get('portal') !== googlePortal) {
+      setSearchParams({ portal: googlePortal });
+    }
+
+    if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+      setError(
+        'Google sign-in is not configured. Add VITE_GOOGLE_CLIENT_ID to frontend/.env and restart the app.'
+      );
       return;
     }
 
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: async (response) => {
-        if (!response?.credential) {
-          setError('Google sign-in failed.');
-          return;
-        }
-        try {
-          await googleLogin({ idToken: response.credential, portal });
-          navigate('/dashboard');
-        } catch (err) {
-          setError(err.response?.data?.message || 'Google sign-in failed. Please try again.');
-        }
-      },
-      ux_mode: 'popup',
+    if (!isGoogleReady()) {
+      setError('Google sign-in is still loading. Please wait a moment and try again.');
+      return;
+    }
+
+    // Register our callback and initialize the SDK once via the helper.
+    registerGoogleCallback(async (response) => {
+      if (!response?.credential) {
+        setError('Google sign-in failed.');
+        return;
+      }
+      try {
+        await googleLogin({ idToken: response.credential, portal: googlePortal });
+        navigate('/dashboard');
+      } catch (err) {
+        setError(err.response?.data?.message || 'Google sign-in failed. Please try again.');
+      }
     });
-    window.google.accounts.id.prompt();
+
+    initGoogle(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+    promptGoogle();
   };
+
 
   return (
     <div className="auth-page">
@@ -116,7 +157,7 @@ export default function LoginPage() {
           </div>
         </section>
 
-        <section className="auth-panel auth-card auth-card-form">
+        <Card className="auth-panel auth-card auth-card-form">
           <p className="page-eyebrow">Shared portal access</p>
           <h2>{portal === 'patient' ? 'Patient Portal Sign In' : 'Staff Portal Sign In'}</h2>
           <p className="auth-card-description">
@@ -157,13 +198,14 @@ export default function LoginPage() {
                 onChange={handleChange}
               />
             </div>
-            <button className="btn btn-primary" type="submit" disabled={submitting}>
+            <Button variant="primary" type="submit" disabled={submitting}>
               {submitting ? 'Signing in...' : 'Sign in'}
-            </button>
-            <button type="button" className="google-btn" onClick={handleGoogleSignIn}>
+            </Button>
+            <Button variant="google" type="button" onClick={handleGoogleSignIn}>
               <span className="google-icon">G</span>
               Sign in with Google
-            </button>
+            </Button>
+            {/* No development bypass button in production; use a real Google client ID */}
           </form>
           <p style={{ marginTop: 16, fontSize: '0.88rem' }}>
             {portal === 'patient' ? (
@@ -181,7 +223,7 @@ export default function LoginPage() {
           <p style={{ marginTop: 8, fontSize: '0.88rem' }}>
             <Link to="/">Back to TERRALINK Health</Link>
           </p>
-        </section>
+        </Card>
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell.jsx';
+import Button from '../components/ui/Button.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   getDoctorAvailability,
   getDoctorAvailableSlots,
   listDoctors,
+  listSpecialties,
 } from '../services/doctorApi.js';
 import {
   cancelAppointment,
@@ -57,12 +59,27 @@ function AnimatedKpiValue({ value }) {
   return <>{animatedValue}</>;
 }
 
+function ProgressBar({ value, variant = '' }) {
+  return (
+    <div className={`progress-track ${variant}`}>
+      <span
+        role="progressbar"
+        aria-valuenow={value}
+        aria-valuemin="0"
+        aria-valuemax="100"
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  );
+}
+
 export default function AppointmentsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [specialty, setSpecialty] = useState('');
+  const [specialties, setSpecialties] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -85,12 +102,14 @@ export default function AppointmentsPage() {
   const loadPageData = useCallback(async () => {
     setLoading(true);
     try {
-      const [appointmentsResponse, doctorsResponse] = await Promise.all([
+      const [appointmentsResponse, doctorsResponse, specialtiesResponse] = await Promise.all([
         listAppointments(),
         user.role === 'patient' ? listDoctors() : Promise.resolve({ data: [] }),
+        user.role === 'patient' ? listSpecialties() : Promise.resolve({ data: [] }),
       ]);
       setAppointments(appointmentsResponse.data);
       setDoctors(doctorsResponse.data);
+      setSpecialties(specialtiesResponse.data || []);
     } catch {
       setError('Unable to load appointment data.');
     } finally {
@@ -148,16 +167,14 @@ export default function AppointmentsPage() {
     };
   }, [form.doctorId, user.role]);
 
-  const applySuggestedSlot = (isoString) => {
-    const date = new Date(isoString);
-    if (Number.isNaN(date.getTime())) return;
-
-    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    const formatted = local.toISOString().slice(0, 16);
-    setForm((prev) => ({ ...prev, scheduledAt: formatted }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === 'doctorId' ? { scheduledAt: '' } : {}),
+    }));
   };
-
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSchedule = async (e) => {
     e.preventDefault();
@@ -166,6 +183,14 @@ export default function AppointmentsPage() {
     if (user.role === 'patient' && registrationStatus !== 'verified') {
       setError('Complete your registration profile (identity, emergency details, and consent) before booking.');
       return;
+    }
+
+    if (form.doctorId && availableSlots.length > 0) {
+      const selectedSlot = availableSlots.find((slot) => slot.iso === form.scheduledAt);
+      if (!selectedSlot) {
+        setError('Please choose an appointment time from the available slots list.');
+        return;
+      }
     }
 
     const selectedDate = new Date(form.scheduledAt);
@@ -300,22 +325,22 @@ export default function AppointmentsPage() {
     return doctors.filter((d) => (d.specialty || '').toLowerCase() === specialty.toLowerCase());
   }, [doctors, specialty]);
 
-  const specialties = useMemo(() => {
-    const s = Array.from(new Set(doctors.map((d) => (d.specialty || 'General Practice').trim()))).filter(Boolean);
-    return s.sort();
-  }, [doctors]);
-
+  const hasDoctors = doctors.length > 0;
   const hasDoctorsForSelection = filteredDoctors.length > 0;
 
-  const canSchedule = hasDoctorsForSelection && (!registrationLoading && registrationStatus === 'verified');
+  const canSchedule =
+    hasDoctorsForSelection &&
+    !registrationLoading &&
+    registrationStatus === 'verified' &&
+    !(form.doctorId && !loadingSlots && availableSlots.length === 0);
 
   return (
     <AppShell>
       <section className="hero-card motion-rise">
         <div>
           <div className="page-eyebrow">Scheduling and queue management</div>
-          <h2 style={{ margin: '4px 0 10px' }}>Appointments</h2>
-          <p className="section-copy" style={{ maxWidth: 720 }}>
+          <h2 className="section-title">Appointments</h2>
+          <p className="section-copy panel-copy">
             Book visits, manage live queue visibility, receive reminder preferences, and self-service reschedule or cancel appointments without front-desk calls.
           </p>
         </div>
@@ -334,12 +359,12 @@ export default function AppointmentsPage() {
       <div className="grid grid-2 appointment-twist-grid motion-rise delay-1">
         <div className="card appointment-spotlight-card">
           <div className="page-eyebrow">Care runway</div>
-          <h3 style={{ margin: '4px 0 10px' }}>
+          <h3 className="section-subtitle">
             {nextAppointment
               ? new Date(nextAppointment.scheduledAt).toLocaleString()
               : 'No upcoming visit scheduled'}
           </h3>
-          <p className="section-copy" style={{ marginBottom: 0 }}>
+          <p className="section-copy">
             {nextAppointment
               ? `${nextAppointment.type.replace('_', ' ')} with ${
                   user.role === 'doctor'
@@ -352,25 +377,26 @@ export default function AppointmentsPage() {
             <span>Readiness</span>
             <strong>{timeToNextVisit}</strong>
           </div>
+          <div className="section-actions">
+            <Button variant="primary" onClick={() => navigate('/appointments/new')}>
+              Book new appointment
+            </Button>
+          </div>
         </div>
 
         <div className="card appointment-mix-card">
           <div className="page-eyebrow">Visit strategy</div>
-          <h3 style={{ margin: '4px 0 10px' }}>In-person vs virtual mix</h3>
+          <h3 className="section-subtitle">In-person vs virtual mix</h3>
           <div className="appointment-mix-row">
             <span>In-person</span>
             <strong>{visitMix.inPerson}</strong>
           </div>
-          <div className="progress-track appointment-progress">
-            <span style={{ width: `${visitMix.inPersonPct}%` }} />
-          </div>
+          <ProgressBar value={visitMix.inPersonPct} />
           <div className="appointment-mix-row">
             <span>Telemedicine</span>
             <strong>{visitMix.virtual}</strong>
           </div>
-          <div className="progress-track appointment-progress appointment-progress-virtual">
-            <span style={{ width: `${visitMix.virtualPct}%` }} />
-          </div>
+          <ProgressBar value={visitMix.virtualPct} variant="appointment-progress-virtual" />
         </div>
       </div>
 
@@ -405,7 +431,7 @@ export default function AppointmentsPage() {
           <form className="card page-stack" onSubmit={handleSchedule}>
             <div>
               <div className="page-eyebrow">Smart slot booking</div>
-              <h3 style={{ marginTop: 0 }}>Schedule a new appointment</h3>
+              <h3 className="section-subtitle">Schedule a new appointment</h3>
             </div>
             {!loading && !hasDoctors && (
               <div className="alert alert-error">
@@ -431,8 +457,8 @@ export default function AppointmentsPage() {
                 </select>
 
                 {specialty && (
-                  <>
-                    <label style={{ marginTop: 8 }}>Doctor</label>
+                  <div className="form-group">
+                    <label>Doctor</label>
                     <select
                       name="doctorId"
                       required
@@ -447,10 +473,10 @@ export default function AppointmentsPage() {
                         </option>
                       ))}
                     </select>
-                  </>
+                  </div>
                 )}
                 {doctorAvailability && (
-                  <div className="field-hint" style={{ marginTop: 8 }}>
+                  <div className="field-hint field-hint-spaced">
                     Available days:{' '}
                     {doctorAvailability.availableDays.map((day) => WEEKDAY_LABELS[day]).join(', ')}
                     {' '}
@@ -461,47 +487,41 @@ export default function AppointmentsPage() {
                   </div>
                 )}
                 {form.doctorId && (
-                  <div style={{ marginTop: 10 }}>
-                    <div className="field-hint" style={{ marginBottom: 8 }}>
-                      Suggested available slots
+                  <div className="field-hint-group">
+                    <div className="field-hint field-hint-spaced">
+                      Choose from available slots for this doctor
                     </div>
                     {loadingSlots ? (
                       <div className="field-hint">Finding available times...</div>
                     ) : availableSlots.length === 0 ? (
-                      <div className="field-hint">No open slots in the next 14 days.</div>
+                      <div className="field-hint">No open slots in the next 14 days. Please select another doctor or check back later.</div>
                     ) : (
-                      <div className="table-actions">
-                        {availableSlots.map((slot) => (
-                          <button
-                            key={slot.iso}
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => applySuggestedSlot(slot.iso)}
-                          >
-                            {new Date(slot.iso).toLocaleString([], {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </button>
-                        ))}
+                      <div className="form-group">
+                        <label htmlFor="scheduled-slot">Available slot</label>
+                        <select
+                          id="scheduled-slot"
+                          name="scheduledAt"
+                          required
+                          value={form.scheduledAt}
+                          onChange={handleChange}
+                        >
+                          <option value="">Select an available time...</option>
+                          {availableSlots.map((slot) => (
+                            <option key={slot.iso} value={slot.iso}>
+                              {new Date(slot.iso).toLocaleString([], {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
-              <div className="form-group">
-                <label>Date & time</label>
-                <input
-                  type="datetime-local"
-                  name="scheduledAt"
-                  required
-                  value={form.scheduledAt}
-                  onChange={handleChange}
-                  disabled={!hasDoctors}
-                />
               </div>
             </div>
             <div className="grid grid-2">
@@ -535,21 +555,21 @@ export default function AppointmentsPage() {
         <div className="grid page-stack">
           <div className="card accent-card">
             <div className="page-eyebrow">Flow guidance</div>
-            <h3 style={{ marginTop: 4 }}>
+            <h3 className="section-subtitle">
               {user.role === 'patient' ? 'Queue visibility and reminders' : 'Daily schedule control'}
             </h3>
-            <p className="section-copy" style={{ marginBottom: 0 }}>
+            <p className="section-copy">
               {user.role === 'patient'
                 ? 'Choose telemedicine when you need a virtual consultation, then watch your status here instead of waiting for manual updates.'
                 : 'Update statuses as patients move through the queue to keep downstream reporting and telemedicine readiness accurate.'}
             </p>
             {user.role === 'patient' && (
-              <label className="toggle-row" style={{ marginTop: 14 }}>
+              <label className="toggle-row toggle-row-spaced">
                 <input
                   type="checkbox"
                   checked={remindersEnabled}
                   onChange={(e) => setRemindersEnabled(e.target.checked)}
-                  style={{ width: 'auto' }}
+                  className="checkbox-inline"
                 />
                 <span>
                   Automated reminders {remindersEnabled ? 'enabled' : 'disabled'} for upcoming visits
@@ -561,10 +581,10 @@ export default function AppointmentsPage() {
           {user.role === 'patient' && (
             <div className="card">
               <div className="page-eyebrow">Dynamic waitlist and queue tracker</div>
-              <h3 style={{ marginTop: 4 }}>Live queue snapshot</h3>
+              <h3 className="section-subtitle">Live queue snapshot</h3>
               <div className="schedule-list">
                 {stats.queueList.length === 0 ? (
-                  <p style={{ color: 'var(--color-muted)' }}>No active queue positions right now.</p>
+                  <p className="section-copy">No active queue positions right now.</p>
                 ) : (
                   stats.queueList.map((appt) => (
                     <div className="schedule-item" key={appt.id}>
@@ -586,13 +606,13 @@ export default function AppointmentsPage() {
             <div className="section-header">
               <div>
                 <div className="page-eyebrow">Appointment ledger</div>
-                <h3 style={{ margin: '4px 0 0' }}>Your appointments</h3>
+                <h3 className="section-subtitle">Your appointments</h3>
               </div>
             </div>
             {loading ? (
               <p>Loading...</p>
             ) : sortedAppointments.length === 0 ? (
-              <p style={{ color: 'var(--color-muted)' }}>No appointments found yet.</p>
+              <p className="section-copy">No appointments found yet.</p>
             ) : (
               <table>
                 <thead>
@@ -613,7 +633,7 @@ export default function AppointmentsPage() {
                           ? `${appt.Patient?.User?.firstName || ''} ${appt.Patient?.User?.lastName || ''}`
                           : `Dr. ${appt.Doctor?.User?.firstName || ''} ${appt.Doctor?.User?.lastName || ''}`}
                       </td>
-                      <td style={{ textTransform: 'capitalize' }}>{appt.type.replace('_', ' ')}</td>
+                      <td className="text-capitalize">{appt.type.replace('_', ' ')}</td>
                       <td>
                         <span className={`badge badge-${appt.status}`}>{appt.status.replace('_', ' ')}</span>
                       </td>

@@ -64,7 +64,7 @@ const createDoctor = async (req, res) => {
     specialty: specialty || 'General Practice',
   });
 
-  const availability = await DoctorAvailability.create({
+  await DoctorAvailability.create({
     doctorId: doctor.id,
     availableDays: JSON.stringify(DEFAULT_AVAILABILITY.availableDays),
     startHour: DEFAULT_AVAILABILITY.startHour,
@@ -110,6 +110,34 @@ const listDoctors = async (req, res) => {
   res.json({ success: true, data: mapped });
 };
 
+// GET /api/doctors/credentials
+const listDoctorCredentials = async (req, res) => {
+  const doctors = await User.findAll({
+    where: { role: 'doctor' },
+    include: [{ model: Doctor, attributes: ['specialty'] }],
+    order: [['createdAt', 'ASC']],
+  });
+
+  const defaultPassword = 'ChangeMe123!';
+  const credentials = await Promise.all(
+    doctors.map(async (user) => {
+      const hasDefaultPassword = await user.validatePassword(defaultPassword);
+      return {
+        id: user.id,
+        fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: user.email,
+        phone: user.phone || null,
+        specialty: user.Doctor?.specialty || 'General Practice',
+        isActive: user.isActive,
+        loginPassword: hasDefaultPassword ? defaultPassword : 'Password changed',
+        createdAt: user.createdAt,
+      };
+    })
+  );
+
+  res.json({ success: true, data: credentials });
+};
+
 // GET /api/doctors/specialties
 const listSpecialties = async (req, res) => {
   // Group by specialty to get distinct values
@@ -123,6 +151,81 @@ const listSpecialties = async (req, res) => {
   // Deduplicate and normalize
   const unique = Array.from(new Set(specialties)).map((s) => (s || 'General Practice'));
   res.json({ success: true, data: unique.sort() });
+};
+
+// DELETE /api/doctors/:id
+const deactivateDoctor = async (req, res) => {
+  const doctorUser = await User.findOne({
+    where: { id: req.params.id, role: 'doctor' },
+    include: [{ model: Doctor }],
+  });
+
+  if (!doctorUser) {
+    throw new ApiError(404, 'Doctor account not found');
+  }
+
+  doctorUser.isActive = false;
+  await doctorUser.save();
+
+  if (doctorUser.Doctor) {
+    await DoctorAvailability.update({ isActive: false }, { where: { doctorId: doctorUser.Doctor.id } });
+    doctorUser.Doctor.isAvailableForTelemedicine = false;
+    await doctorUser.Doctor.save();
+  }
+
+  res.json({ success: true, message: 'Doctor account deactivated' });
+};
+
+// PUT /api/doctors/:id/restore
+const restoreDoctor = async (req, res) => {
+  const doctorUser = await User.findOne({
+    where: { id: req.params.id, role: 'doctor' },
+    include: [{ model: Doctor }],
+  });
+
+  if (!doctorUser) {
+    throw new ApiError(404, 'Doctor account not found');
+  }
+
+  doctorUser.isActive = true;
+  await doctorUser.save();
+
+  if (doctorUser.Doctor) {
+    await DoctorAvailability.update({ isActive: true }, { where: { doctorId: doctorUser.Doctor.id } });
+    doctorUser.Doctor.isAvailableForTelemedicine = true;
+    await doctorUser.Doctor.save();
+  }
+
+  res.json({ success: true, message: 'Doctor account restored' });
+};
+
+// PUT /api/doctors/restore-inactive
+const restoreAllInactiveDoctors = async (req, res) => {
+  const inactiveDoctorUsers = await User.findAll({
+    where: { role: 'doctor', isActive: false },
+    include: [{ model: Doctor }],
+  });
+
+  if (!inactiveDoctorUsers.length) {
+    return res.json({ success: true, message: 'No inactive doctor accounts found to restore', restoredCount: 0 });
+  }
+
+  const doctorIds = inactiveDoctorUsers
+    .map((user) => user.Doctor?.id)
+    .filter((id) => Number.isInteger(id));
+
+  await User.update({ isActive: true }, { where: { role: 'doctor', isActive: false } });
+
+  if (doctorIds.length) {
+    await DoctorAvailability.update({ isActive: true }, { where: { doctorId: { [Op.in]: doctorIds } } });
+    await Doctor.update({ isAvailableForTelemedicine: true }, { where: { id: { [Op.in]: doctorIds } } });
+  }
+
+  res.json({
+    success: true,
+    message: `Restored ${inactiveDoctorUsers.length} inactive doctor account${inactiveDoctorUsers.length === 1 ? '' : 's'}.`,
+    restoredCount: inactiveDoctorUsers.length,
+  });
 };
 
 // GET /api/doctors/:id
@@ -296,6 +399,11 @@ const getDoctorAvailableSlots = async (req, res) => {
 module.exports = {
   createDoctor,
   listDoctors,
+  listDoctorCredentials,
+  listSpecialties,
+  deactivateDoctor,
+  restoreDoctor,
+  restoreAllInactiveDoctors,
   getDoctorById,
   getMyProfile,
   updateMyProfile,

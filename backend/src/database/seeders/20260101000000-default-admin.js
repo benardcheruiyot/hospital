@@ -37,7 +37,7 @@ module.exports = {
       },
       {
         id: doctorUserId,
-        firstName: 'Dr. Sam',
+        firstName: 'Samuel',
         lastName: 'Kibet',
         email: 'doctor@hospital-platform.local',
         phone: '+254700111111',

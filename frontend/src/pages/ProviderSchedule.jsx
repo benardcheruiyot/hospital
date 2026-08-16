@@ -8,7 +8,7 @@ export default function ProviderSchedule() {
         <div>
           <div className="page-eyebrow">Clinical operations</div>
           <h2>My Schedule</h2>
-          <p className="section-copy">Set availability and review today's appointments.</p>
+          <p className="section-copy">Set availability and review today&apos;s appointments.</p>
         </div>
         <div className="hero-actions hero-summary">
           <button className="btn btn-secondary">Set Availability</button>
@@ -16,7 +16,7 @@ export default function ProviderSchedule() {
       </section>
 
       <div className="card">
-        <div className="page-eyebrow">Today's Schedule — Friday, July 24, 2026</div>
+        <div className="page-eyebrow">Today&apos;s Schedule — Friday, July 24, 2026</div>
         <div style={{ marginTop: 12 }}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             <li style={{ padding: 12, borderBottom: '1px solid rgba(23,105,194,0.06)' }}>

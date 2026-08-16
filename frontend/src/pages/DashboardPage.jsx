@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell.jsx';
+import Button from '../components/ui/Button.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { checkInAppointment, listAppointments } from '../services/appointmentApi.js';
 import { getOverview } from '../services/analyticsApi.js';
@@ -208,8 +209,8 @@ export default function DashboardPage() {
       <AppShell>
         <div className="card loading-panel">
           <div className="status-spinner" />
-          <h3 style={{ margin: 0 }}>Loading dashboard</h3>
-          <p className="section-copy" style={{ margin: 0, maxWidth: 560 }}>
+          <h3 className="section-title">Loading dashboard</h3>
+          <p className="section-copy panel-copy">
             Syncing schedules, messages, analytics, and virtual care data.
           </p>
         </div>
@@ -229,7 +230,7 @@ export default function DashboardPage() {
                 ? 'Admin Portal'
                 : 'Provider Workspace'}
             </div>
-            <h2 style={{ marginTop: 0, marginBottom: 10 }}>
+            <h2 className="section-title">
               {(() => {
                 const hour = new Date().getHours();
                 const timeGreeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
@@ -237,7 +238,7 @@ export default function DashboardPage() {
                 return `${timeGreeting}, ${name} 👋`;
               })()}
             </h2>
-            <p className="section-copy" style={{ maxWidth: 680 }}>
+            <p className="section-copy panel-copy">
               {user.role === 'patient'
                 ? 'Stay on top of your care journey, appointments, messages, and virtual visits in one patient portal.'
                 : user.role === 'admin'
@@ -245,9 +246,8 @@ export default function DashboardPage() {
                 : 'Stay connected to patients, schedules, and care workflows in one provider workspace.'}
             </p>
             <div className="hero-actions dashboard-hero-actions">
-              <button
-                className="btn"
-                type="button"
+              <Button
+                variant="primary"
                 onClick={() => handleNavigate(user.role === 'patient' ? '/appointments' : user.role === 'admin' ? '/patients' : '/analytics')}
               >
                 {user.role === 'patient'
@@ -255,17 +255,16 @@ export default function DashboardPage() {
                   : user.role === 'admin'
                   ? 'Open patient roster'
                   : 'Open analytics'}
-              </button>
-              <button
-                className="btn btn-secondary"
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => handleNavigate(user.role === 'patient' ? '/registration' : '/analytics')}
               >
                 {user.role === 'patient' ? 'Complete registration' : 'Open analytics'}
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={handleRefresh} disabled={refreshing}>
+              </Button>
+              <Button variant="secondary" onClick={handleRefresh} disabled={refreshing}>
                 {refreshing ? 'Refreshing...' : 'Refresh dashboard'}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -273,7 +272,7 @@ export default function DashboardPage() {
             <div className="dashboard-status-header">
               <div>
                 <div className="page-eyebrow">Dashboard snapshot</div>
-                <h3 style={{ margin: '8px 0 0' }}>
+                <h3 className="section-subtitle">
                   {user.role === 'patient' ? 'Your care summary' : 'Today’s provider workflow'}
                 </h3>
               </div>
@@ -308,12 +307,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="dashboard-status-actions">
-              <button className="btn btn-secondary" type="button" onClick={() => handleNavigate('/appointments')}>
+              <Button variant="secondary" type="button" onClick={() => handleNavigate('/appointments')}>
                 View schedule
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={() => handleNavigate(user.role === 'patient' ? '/messages' : '/analytics')}>
+              </Button>
+              <Button variant="secondary" type="button" onClick={() => handleNavigate(user.role === 'patient' ? '/messages' : '/analytics')}>
                 {user.role === 'patient' ? 'Open messages' : 'Open analytics'}
-              </button>
+              </Button>
             </div>
           </aside>
         </div>
@@ -332,11 +331,11 @@ export default function DashboardPage() {
 
       {user.role === 'patient' && (
         <section className="dashboard-history-section motion-rise delay-2">
-          <div className="card">
+          <div className="card card-spaced">
             <div className="section-header">
               <div>
                 <div className="page-eyebrow">Visit history</div>
-                <h3 style={{ margin: '6px 0 0' }}>Hospital visit records</h3>
+                <h3 className="section-subtitle">Hospital visit records</h3>
               </div>
               <span className="badge badge-primary">
                 {visitHistoryData.count} completed visit{visitHistoryData.count === 1 ? '' : 's'}
@@ -344,7 +343,7 @@ export default function DashboardPage() {
             </div>
             {visitHistoryData.count > 0 ? (
               <div className="visit-history-body">
-                <p className="section-copy" style={{ marginBottom: 18 }}>
+                <p className="section-copy section-copy-spaced">
                   You have {visitHistoryData.count} completed hospital visit{visitHistoryData.count === 1 ? '' : 's'}. Your most recent visit was for <strong>{visitHistoryData.condition}</strong>.
                 </p>
                 <div className="visit-history-list">
@@ -374,15 +373,15 @@ export default function DashboardPage() {
 
       {user.role !== 'patient' && (
         <section className="dashboard-waiting-section motion-rise delay-2">
-          <div className="dashboard-waiting-card">
+          <div className="dashboard-waiting-card card-spaced">
             <div className="waiting-card-header">
               <div>
                 <div className="page-eyebrow">Waiting Patients</div>
-                <h3 style={{ margin: '6px 0 0' }}>Current queue</h3>
+                <h3 className="section-subtitle">Current queue</h3>
               </div>
-              <button className="btn btn-secondary" type="button" onClick={() => handleNavigate('/appointments')}>
+              <Button variant="secondary" type="button" onClick={() => handleNavigate('/appointments')}>
                 View All
-              </button>
+              </Button>
             </div>
             <div className="waiting-list">
               {upcoming.slice(0, 5).map((appt) => (
@@ -408,20 +407,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="dashboard-alert-card">
+          <div className="dashboard-alert-card card-spaced">
             <div className="page-eyebrow">Critical Lab Alert</div>
-            <h3 style={{ margin: '8px 0 0' }}>
+            <h3 className="section-subtitle">
               {dashboardData.latestSummary?.consultationSummary
                 ? 'Action needed for recent findings'
                 : 'Scanner ready for critical alerts'}
             </h3>
-            <p style={{ color: 'var(--color-muted)', marginTop: 10 }}>
+            <p className="section-copy">
               {dashboardData.latestSummary?.consultationSummary ||
                 'No critical lab alerts right now. Patient flow is stable and ready for the next review.'}
             </p>
-            <button className="btn" type="button" onClick={() => handleNavigate('/appointments')}>
+            <Button variant="primary" type="button" onClick={() => handleNavigate('/appointments')}>
               Review
-            </button>
+            </Button>
           </div>
         </section>
       )}
@@ -585,11 +584,11 @@ export default function DashboardPage() {
                       <span>{task.detail}</span>
                     </div>
                   ))}
-                  {dashboardData.nextAppointment && (
-                    <button className="btn" type="button" onClick={handleCheckIn}>
+                    {dashboardData.nextAppointment && (
+                    <Button variant="primary" type="button" onClick={handleCheckIn}>
                       Quick check-in
-                    </button>
-                  )}
+                    </Button>
+                    )}
                 </>
               ) : (
                 <div className="command-grid">

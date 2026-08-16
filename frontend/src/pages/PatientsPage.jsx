@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell.jsx';
 import Modal from '../components/Modal.jsx';
@@ -25,7 +25,7 @@ export default function PatientsPage() {
   });
   const [createFormErrors, setCreateFormErrors] = useState({});
 
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -36,11 +36,11 @@ export default function PatientsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
     loadPatients();
-  }, [filter]);
+  }, [loadPatients]);
 
   const filteredPatients = useMemo(() => {
     const term = search.trim().toLowerCase();

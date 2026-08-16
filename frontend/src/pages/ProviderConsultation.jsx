@@ -37,7 +37,7 @@ export default function ProviderConsultation() {
         <div className="card">
           <div className="page-eyebrow">Telemedicine Session</div>
           <h3 style={{ marginTop: 6 }}>Patient: {patient.name}</h3>
-          <p className="section-copy">Click "Start Video Call" to connect with patient</p>
+          <p className="section-copy">Click &quot;Start Video Call&quot; to connect with patient</p>
         </div>
 
         <div className="card">

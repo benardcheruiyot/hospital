@@ -85,7 +85,7 @@ async function seedAdmin() {
     const existingDoctor = await db.User.findOne({ where: { email: doctorEmail } });
     if (!existingDoctor) {
       const doctor = await db.User.create({
-        firstName: 'Dr. Sam',
+        firstName: 'Samuel',
         lastName: 'Kibet',
         email: doctorEmail,
         phone: '+254700111111',
@@ -94,7 +94,7 @@ async function seedAdmin() {
         isActive: true,
       });
 
-      await db.Doctor.create({
+      const doctorProfile = await db.Doctor.create({
         userId: doctor.id,
         specialty: 'General Practice',
         licenseNumber: 'DOC-1001',
@@ -104,7 +104,7 @@ async function seedAdmin() {
       });
 
       await db.DoctorAvailability.create({
-        doctorId: doctor.id,
+        doctorId: doctorProfile.id,
         availableDays: JSON.stringify([1, 2, 3, 4, 5]),
         startHour: 9,
         endHour: 17,
@@ -114,9 +114,9 @@ async function seedAdmin() {
 
       console.log('Default doctor created:', doctorEmail);
     } else {
-      const existingDoctorProfile = await db.Doctor.findOne({ where: { userId: existingDoctor.id } });
-      if (!existingDoctorProfile) {
-        await db.Doctor.create({
+      let doctorProfile = await db.Doctor.findOne({ where: { userId: existingDoctor.id } });
+      if (!doctorProfile) {
+        doctorProfile = await db.Doctor.create({
           userId: existingDoctor.id,
           specialty: 'General Practice',
           licenseNumber: 'DOC-1001',
@@ -126,10 +126,10 @@ async function seedAdmin() {
         });
       }
 
-      const existingDoctorAvailability = await db.DoctorAvailability.findOne({ where: { doctorId: existingDoctor.id } });
+      const existingDoctorAvailability = await db.DoctorAvailability.findOne({ where: { doctorId: doctorProfile.id } });
       if (!existingDoctorAvailability) {
         await db.DoctorAvailability.create({
-          doctorId: existingDoctor.id,
+          doctorId: doctorProfile.id,
           availableDays: JSON.stringify([1, 2, 3, 4, 5]),
           startHour: 9,
           endHour: 17,

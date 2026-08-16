@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { registerGoogleCallback, initGoogle, promptGoogle, isGoogleReady } from '../utils/google';
 import Modal from '../components/Modal.jsx';
+import Button from '../components/ui/Button.jsx';
+import Card from '../components/ui/Card.jsx';
 
 export default function RegisterPage() {
   const { register, googleLogin } = useAuth();
@@ -35,10 +38,10 @@ export default function RegisterPage() {
     }
   };
 
-  const closeSuccessModal = () => {
+  const closeSuccessModal = useCallback(() => {
     setSuccessOpen(false);
     navigate('/dashboard');
-  };
+  }, [navigate]);
 
   useEffect(() => {
     let timeout;
@@ -48,33 +51,37 @@ export default function RegisterPage() {
       }, 1800);
     }
     return () => window.clearTimeout(timeout);
-  }, [successOpen]);
+  }, [successOpen, closeSuccessModal]);
 
   const handleGoogleSignUp = () => {
     setError('');
-    if (!window.google?.accounts?.id || !import.meta.env.VITE_GOOGLE_CLIENT_ID) {
-      setError('Google sign-up is unavailable right now.');
+    if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+      setError(
+        'Google sign-up is not configured. Add VITE_GOOGLE_CLIENT_ID to frontend/.env and restart the app.'
+      );
+      return;
+    }
+    if (!isGoogleReady()) {
+      setError('Google sign-up is still loading. Please wait a moment and try again.');
       return;
     }
 
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: async (response) => {
-        if (!response?.credential) {
-          setError('Google sign-up failed.');
-          return;
-        }
-        try {
-          await googleLogin({ idToken: response.credential, portal: 'patient' });
-          setSuccessMessage('Your Google account has been connected successfully.');
-          setSuccessOpen(true);
-        } catch (err) {
-          setError(err.response?.data?.message || 'Google sign-up failed. Please try again.');
-        }
-      },
-      ux_mode: 'popup',
+    registerGoogleCallback(async (response) => {
+      if (!response?.credential) {
+        setError('Google sign-up failed.');
+        return;
+      }
+      try {
+        await googleLogin({ idToken: response.credential, portal: 'patient' });
+        setSuccessMessage('Your Google account has been connected successfully.');
+        setSuccessOpen(true);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Google sign-up failed. Please try again.');
+      }
     });
-    window.google.accounts.id.prompt();
+
+    initGoogle(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+    promptGoogle();
   };
 
   return (
@@ -131,7 +138,7 @@ export default function RegisterPage() {
           </div>
         </section>
 
-        <section className="auth-panel auth-card auth-card-form">
+        <Card className="auth-panel auth-card auth-card-form">
           <p className="page-eyebrow">Patient registration</p>
           <h2>Create your TERRALINK Health patient account</h2>
           <p className="auth-card-description">
@@ -173,13 +180,14 @@ export default function RegisterPage() {
                 onChange={handleChange}
               />
             </div>
-            <button className="btn btn-primary" type="submit" disabled={submitting}>
+            <Button variant="primary" type="submit" disabled={submitting}>
               {submitting ? 'Creating account...' : 'Register'}
-            </button>
-            <button type="button" className="google-btn" onClick={handleGoogleSignUp}>
+            </Button>
+            <Button variant="google" type="button" onClick={handleGoogleSignUp}>
               <span className="google-icon">G</span>
               Sign up with Google
-            </button>
+            </Button>
+            {/* No development bypass button; use a real Google Client ID for sign-up */}
           </form>
           <Modal open={successOpen} title="Registration complete" onClose={closeSuccessModal} variant="success">
             <div className="modal-success-state">
@@ -210,7 +218,7 @@ export default function RegisterPage() {
           <p style={{ marginTop: 8, fontSize: '0.88rem' }}>
             <Link to="/">Back to overview</Link>
           </p>
-        </section>
+        </Card>
       </div>
     </div>
   );

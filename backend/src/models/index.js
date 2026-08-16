@@ -8,7 +8,6 @@ const db = {};
 fs.readdirSync(__dirname)
   .filter((file) => file !== basename && file.endsWith('.js'))
   .forEach((file) => {
-    // eslint-disable-next-line import/no-dynamic-require, global-require
     const model = require(path.join(__dirname, file))(sequelize);
     db[model.name] = model;
   });
