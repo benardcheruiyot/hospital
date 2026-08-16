@@ -9,6 +9,8 @@ const routes = require('./routes');
 const { errorHandler, notFound } = require('./middleware/error.middleware');
 
 const app = express();
+app.set('trust proxy', 1);
+
 const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173,http://localhost:5174')
   .split(',')
