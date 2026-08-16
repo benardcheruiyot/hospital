@@ -667,12 +667,9 @@ async function start() {
     await sequelize.authenticate();
     console.log('Database connection established.');
 
-    if (process.env.NODE_ENV !== 'production') {
-      // Convenience for local development only; use migrations in production.
-      await sequelize.sync();
-      console.log('Models synchronized with the database.');
-      await ensureDemoAccounts();
-    }
+    await sequelize.sync();
+    console.log('Models synchronized with the database.');
+    await ensureDemoAccounts();
 
     server.listen(PORT, () => {
       console.log(`Hospital platform API listening on port ${PORT}`);
