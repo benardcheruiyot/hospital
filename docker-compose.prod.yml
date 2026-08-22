@@ -48,7 +48,7 @@ services:
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/api/health >/dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -62,6 +62,9 @@ services:
         max-file: "3"
 
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
     image: ${FRONTEND_IMAGE:-ghcr.io/benardcheruiyot/hospital/frontend:latest}
     restart: always
     depends_on:
