@@ -4,7 +4,7 @@ let socket = null;
 
 export function connectSocket(token) {
   if (socket) return socket;
-  socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+  socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin, {
     auth: { token },
     autoConnect: true,
     transports: ['websocket', 'polling'],
