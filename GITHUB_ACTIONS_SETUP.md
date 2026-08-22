@@ -205,8 +205,8 @@ If you prefer manual setup:
 4. **SSL Certificate (Production Only)**
    ```bash
    sudo certbot certonly --standalone -d your-domain.com
-   sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ~/hospital-platform/ssl/cert.pem
-   sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem ~/hospital-platform/ssl/key.pem
+   sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ~/hospital-platform/ssl/fullchain.pem
+   sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem ~/hospital-platform/ssl/privkey.pem
    sudo chown deploy:deploy ~/hospital-platform/ssl/*
    ```
 

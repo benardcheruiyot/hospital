@@ -146,8 +146,8 @@ certbot certonly --standalone -d terralinkhealth.co.ke -d www.terralinkhealth.co
 # - Certificate will be generated
 
 # Copy certificates to app directory
-cp /etc/letsencrypt/live/terralinkhealth.co.ke/fullchain.pem /home/deploy/hospital-platform/ssl/cert.pem
-cp /etc/letsencrypt/live/terralinkhealth.co.ke/privkey.pem /home/deploy/hospital-platform/ssl/key.pem
+cp /etc/letsencrypt/live/terralinkhealth.co.ke/fullchain.pem /home/deploy/hospital-platform/ssl/fullchain.pem
+cp /etc/letsencrypt/live/terralinkhealth.co.ke/privkey.pem /home/deploy/hospital-platform/ssl/privkey.pem
 chown deploy:deploy /home/deploy/hospital-platform/ssl/*
 
 # Verify certificates

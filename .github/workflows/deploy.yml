@@ -70,9 +70,10 @@ jobs:
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
       
       - name: Create deployment directory
+        if: steps.refs.outputs.env == 'production'
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            mkdir -p ~/hospital-platform
+            "mkdir -p ~/hospital-platform/ssl && test -f ~/hospital-platform/ssl/fullchain.pem && test -f ~/hospital-platform/ssl/privkey.pem"
       
       - name: Copy files to server
         run: |
@@ -110,12 +111,14 @@ jobs:
       - name: Verify deployment
         run: |
           PROTOCOL="https"
+          HOST="terralinkhealth.co.ke"
           if [ "${{ steps.refs.outputs.env }}" = "staging" ]; then
             PROTOCOL="http"
+            HOST="${{ secrets.DEPLOY_HOST }}"
           fi
 
           for i in {1..30}; do
-            if curl -f "$PROTOCOL://${{ secrets.DEPLOY_HOST }}/api/health" 2>/dev/null; then
+            if curl --fail --silent --show-error "$PROTOCOL://$HOST/api/health" 2>/dev/null; then
               echo "✓ Application is healthy"
               exit 0
             fi

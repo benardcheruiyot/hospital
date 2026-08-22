@@ -105,8 +105,8 @@ apt-get install -y certbot python3-certbot-nginx
 certbot certonly --standalone -d your-domain.com
 
 # Copy to app directory
-cp /etc/letsencrypt/live/your-domain.com/fullchain.pem /home/deploy/hospital-platform/ssl/cert.pem
-cp /etc/letsencrypt/live/your-domain.com/privkey.pem /home/deploy/hospital-platform/ssl/key.pem
+cp /etc/letsencrypt/live/your-domain.com/fullchain.pem /home/deploy/hospital-platform/ssl/fullchain.pem
+cp /etc/letsencrypt/live/your-domain.com/privkey.pem /home/deploy/hospital-platform/ssl/privkey.pem
 chown deploy:deploy /home/deploy/hospital-platform/ssl/*
 ```
 
@@ -342,8 +342,8 @@ ls -l ~/hospital-platform/ssl/
 sudo certbot renew --force-renewal -d your-domain.com
 
 # Copy new cert
-sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ~/hospital-platform/ssl/cert.pem
-sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem ~/hospital-platform/ssl/key.pem
+sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ~/hospital-platform/ssl/fullchain.pem
+sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem ~/hospital-platform/ssl/privkey.pem
 sudo chown deploy:deploy ~/hospital-platform/ssl/*
 
 # Restart Nginx

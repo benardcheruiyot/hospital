@@ -178,8 +178,8 @@ sudo apt-get install certbot python3-certbot-nginx
 sudo certbot certonly --standalone -d prod.example.com
 
 # Copy certificates to your application directory
-sudo cp /etc/letsencrypt/live/prod.example.com/fullchain.pem ~/hospital-platform/ssl/cert.pem
-sudo cp /etc/letsencrypt/live/prod.example.com/privkey.pem ~/hospital-platform/ssl/key.pem
+sudo cp /etc/letsencrypt/live/prod.example.com/fullchain.pem ~/hospital-platform/ssl/fullchain.pem
+sudo cp /etc/letsencrypt/live/prod.example.com/privkey.pem ~/hospital-platform/ssl/privkey.pem
 sudo chown deploy:deploy ~/hospital-platform/ssl/*
 ```
 

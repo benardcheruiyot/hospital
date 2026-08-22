@@ -112,9 +112,9 @@ certbot certonly --standalone -d hospital.example.com
 
 # Copy certificate
 cp /etc/letsencrypt/live/hospital.example.com/fullchain.pem \
-   /home/deploy/hospital-platform/ssl/cert.pem
+   /home/deploy/hospital-platform/ssl/fullchain.pem
 cp /etc/letsencrypt/live/hospital.example.com/privkey.pem \
-   /home/deploy/hospital-platform/ssl/key.pem
+   /home/deploy/hospital-platform/ssl/privkey.pem
 chown deploy:deploy /home/deploy/hospital-platform/ssl/*
 ```
 

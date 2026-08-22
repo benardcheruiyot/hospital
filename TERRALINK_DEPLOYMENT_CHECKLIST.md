@@ -144,9 +144,9 @@ certbot certonly --standalone \
 
 # Copy certificates
 cp /etc/letsencrypt/live/terralinkhealth.co.ke/fullchain.pem \
-   /home/deploy/hospital-platform/ssl/cert.pem
+   /home/deploy/hospital-platform/ssl/fullchain.pem
 cp /etc/letsencrypt/live/terralinkhealth.co.ke/privkey.pem \
-   /home/deploy/hospital-platform/ssl/key.pem
+   /home/deploy/hospital-platform/ssl/privkey.pem
 chown deploy:deploy /home/deploy/hospital-platform/ssl/*
 
 # Verify
