@@ -82,6 +82,7 @@ jobs:
           ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
           KEY_FINGERPRINT="$(ssh-keygen -lf ~/.ssh/deploy_key.pub | awk '{print $2}')"
           echo "Deploy key fingerprint: $KEY_FINGERPRINT"
+          echo "Deploy public key: $(cat ~/.ssh/deploy_key.pub)"
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Verify SSH access
