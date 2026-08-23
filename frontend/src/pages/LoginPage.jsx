@@ -99,7 +99,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-header">
+      <header className="auth-header">
         <div className="auth-brand">
           <span className="auth-brand-mark">✚</span>
           <div>
@@ -110,8 +110,8 @@ export default function LoginPage() {
         <div className="auth-header-actions">
           <Link to="/register" className="btn btn-secondary">Create account</Link>
         </div>
-      </div>
-      <div className="auth-layout auth-layout-wide">
+      </header>
+      <main className="auth-layout auth-layout-wide">
         <section className="auth-panel auth-panel-featured auth-hero-panel">
           <div className="auth-hero-badges">
             <span className="badge badge-confirmed">Secure access</span>
@@ -166,6 +166,8 @@ export default function LoginPage() {
             <button
               className={portal === 'patient' ? 'portal-switch active' : 'portal-switch'}
               type="button"
+              role="tab"
+              aria-selected={portal === 'patient'}
               onClick={() => handlePortalChange('patient')}
             >
               Patient
@@ -173,6 +175,8 @@ export default function LoginPage() {
             <button
               className={portal === 'staff' ? 'portal-switch active' : 'portal-switch'}
               type="button"
+              role="tab"
+              aria-selected={portal === 'staff'}
               onClick={() => handlePortalChange('staff')}
             >
               Staff
@@ -221,7 +225,7 @@ export default function LoginPage() {
             <Link to="/">Back to TERRALINK Health</Link>
           </p>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

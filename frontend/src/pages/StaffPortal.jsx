@@ -24,7 +24,8 @@ export default function StaffPortal() {
         </div>
       </header>
 
-      <section className="reference-hero">
+      <main>
+      <section className="reference-hero" aria-label="Provider portal overview">
         <div className="reference-hero-copy">
           <div className="reference-kicker">Provider portal</div>
           <h1>Secure workspace for hospital staff</h1>
@@ -37,7 +38,7 @@ export default function StaffPortal() {
       </section>
       <div className="reference-hero-art" aria-hidden="true" />
 
-      <section className="reference-features">
+      <section className="reference-features" aria-label="Provider portal features">
         {STAFF_FEATURES.map((f) => (
           <article className="reference-feature" key={f.title}>
             <div className="reference-feature-icon">{f.icon}</div>
@@ -48,6 +49,7 @@ export default function StaffPortal() {
           </article>
         ))}
       </section>
+      </main>
 
       <footer className="reference-footer">
         <div>

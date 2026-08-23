@@ -29,6 +29,6 @@ test('landing page stays usable on mobile viewport', async ({ page }) => {
 
   expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
   expect(layout.headerDirection).toBe('column');
-  expect(layout.heroColumns).toContain('1fr');
-  expect(layout.portalColumns).toContain('1fr');
+  expect(layout.heroColumns.split(' ')).toHaveLength(1);
+  expect(layout.portalColumns.split(' ')).toHaveLength(1);
 });

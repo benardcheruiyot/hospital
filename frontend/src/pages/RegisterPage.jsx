@@ -86,7 +86,7 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-header">
+      <header className="auth-header">
         <div className="auth-brand">
           <span className="auth-brand-mark">✚</span>
           <div>
@@ -97,8 +97,8 @@ export default function RegisterPage() {
         <div className="auth-header-actions">
           <Link to="/login" className="btn btn-secondary">Sign in</Link>
         </div>
-      </div>
-      <div className="auth-layout auth-layout-wide">
+      </header>
+      <main className="auth-layout auth-layout-wide">
         <section className="auth-panel auth-panel-featured auth-hero-panel">
           <div className="auth-hero-badges">
             <span className="badge badge-confirmed">Patient-first</span>
@@ -219,7 +219,7 @@ export default function RegisterPage() {
             <Link to="/">Back to overview</Link>
           </p>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

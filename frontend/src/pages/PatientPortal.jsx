@@ -24,7 +24,8 @@ export default function PatientPortal() {
         </div>
       </header>
 
-      <section className="reference-hero">
+      <main>
+      <section className="reference-hero" aria-label="Patient portal overview">
         <div className="reference-hero-copy">
           <div className="reference-kicker">Patient Portal</div>
           <h1>Welcome to your care workspace</h1>
@@ -37,7 +38,7 @@ export default function PatientPortal() {
         <div className="reference-hero-art" aria-hidden="true" />
       </section>
 
-      <section className="reference-features">
+      <section className="reference-features" aria-label="Patient portal features">
         {PATIENT_FEATURES.map((f) => (
           <article className="reference-feature" key={f.title}>
             <div className="reference-feature-icon">{f.icon}</div>
@@ -48,6 +49,7 @@ export default function PatientPortal() {
           </article>
         ))}
       </section>
+      </main>
 
       <footer className="reference-footer">
         <div>

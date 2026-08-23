@@ -53,7 +53,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="reference-hero">
+      <main>
+      <section className="reference-hero" aria-label="TERRALINK Health overview">
         <div className="reference-hero-art" aria-hidden="true">
           <div className="reference-orbit reference-orbit-one" />
           <div className="reference-orbit reference-orbit-two" />
@@ -84,7 +85,7 @@ export default function LandingPage() {
         ))}
       </section>
 
-      <section className="reference-portals">
+      <section className="reference-portals" aria-label="Portal access">
         <div className="reference-section-heading">
           <p className="reference-kicker">Your care, connected</p>
           <h2>Access Your Portal</h2>
@@ -101,6 +102,7 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+      </main>
 
       <footer className="reference-footer">
         <div>
