@@ -221,7 +221,7 @@ jobs:
             export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:develop"
           else
             COMPOSE_FILE="docker-compose.prod.yml"
-            COMPOSE_PROJECT="hospital-platform-production"
+            COMPOSE_PROJECT="hospital-platform"
             export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:${IMAGE_TAG}"
             export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:${IMAGE_TAG}"
           fi
