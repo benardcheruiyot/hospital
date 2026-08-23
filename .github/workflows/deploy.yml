@@ -75,10 +75,13 @@ jobs:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          umask 077
+          DEPLOY_KEY="${DEPLOY_KEY//\\n/$'\n'}"
+          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
-          ssh-keygen -lf ~/.ssh/deploy_key.pub
+          KEY_FINGERPRINT="$(ssh-keygen -lf ~/.ssh/deploy_key.pub | awk '{print $2}')"
+          echo "Deploy key fingerprint: $KEY_FINGERPRINT"
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Verify SSH access
@@ -86,7 +89,8 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 \
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o PubkeyAuthentication=yes \
+            -o PreferredAuthentications=publickey -o ConnectTimeout=15 \
             -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" 'printf "SSH authentication succeeded for %s\\n" "$USER"'
       
       - name: Create deployment directory
