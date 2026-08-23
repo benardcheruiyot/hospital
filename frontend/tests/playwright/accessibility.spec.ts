@@ -6,6 +6,9 @@ const pages = ['/', '/portal/patient', '/portal/staff', '/register', '/login', '
 for (const p of pages) {
   test(`a11y check ${p}`, async ({ page }) => {
     await page.goto(p);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('h1, h2, main, .main-content', { state: 'visible' });
+    await page.waitForTimeout(300);
     await page.addScriptTag({ content: axe.source });
     const results = await page.evaluate(async () => await (window as any).axe.run());
     const violations = results.violations || [];

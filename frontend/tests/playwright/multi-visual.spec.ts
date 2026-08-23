@@ -41,6 +41,7 @@ for (const p of PAGES) {
 
     await page.goto(p.path);
     await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('h1, h2, main, .main-content', { state: 'visible' });
     await page.waitForTimeout(500);
     expect(await page.screenshot({ fullPage: true })).toMatchSnapshot(`${p.name}-full.png`);
   });
