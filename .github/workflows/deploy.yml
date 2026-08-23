@@ -244,7 +244,7 @@ jobs:
             sh -c 'psql -U postgres -v db_password="\$DB_PASSWORD"'
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
           for i in {1..90}; do
-            STATUS="$(docker inspect --format '{{.State.Health.Status}}' \"\$COMPOSE_PROJECT-backend-1\" 2>/dev/null || true)"
+            STATUS="$(docker inspect --format '{{.State.Health.Status}}' "\$COMPOSE_PROJECT-backend-1" 2>/dev/null || true)"
             if [ "\$STATUS" = "healthy" ]; then exit 0; fi
             if [ "\$STATUS" = "unhealthy" ]; then
               docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=80 backend
