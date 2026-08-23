@@ -122,8 +122,20 @@ jobs:
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" <<'HOME_FIX_EOF'
           set -e
           DEPLOY_HOME=/home/deploy
-          test -d "$DEPLOY_HOME" || { echo "ERROR: $DEPLOY_HOME does not exist; run scripts/setup-server.sh as root"; exit 1; }
-          test -w "$DEPLOY_HOME" || { echo "ERROR: $DEPLOY_HOME is not writable by deploy; fix its owner and mode"; exit 1; }
+          if [ ! -d "$DEPLOY_HOME" ]; then
+            sudo -n install -d -o deploy -g deploy -m 755 "$DEPLOY_HOME" || {
+              echo "ERROR: cannot create $DEPLOY_HOME; provision the deploy account as root"
+              exit 1
+            }
+          fi
+          if [ ! -w "$DEPLOY_HOME" ]; then
+            sudo -n chown deploy:deploy "$DEPLOY_HOME" || {
+              echo "ERROR: cannot change owner of $DEPLOY_HOME; grant deploy passwordless sudo or fix it as root"
+              exit 1
+            }
+            sudo -n chmod 755 "$DEPLOY_HOME"
+          fi
+          test -w "$DEPLOY_HOME" || { echo "ERROR: $DEPLOY_HOME is still not writable by deploy"; exit 1; }
           mkdir -p "$DEPLOY_HOME/.ssh"
           chmod 700 "$DEPLOY_HOME/.ssh"
           echo "✓ Deploy home is ready: $DEPLOY_HOME"
