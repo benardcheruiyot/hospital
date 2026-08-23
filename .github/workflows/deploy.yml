@@ -228,7 +228,8 @@ jobs:
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d db
           for i in {1..30}; do
-            DB_STATUS="$(docker inspect --format '{{.State.Health.Status}}' "\$COMPOSE_PROJECT-db-1" 2>/dev/null || true)"
+            DB_CONTAINER="$(docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" ps -q db)"
+            DB_STATUS="$(docker inspect --format '{{.State.Health.Status}}' "\$DB_CONTAINER" 2>/dev/null || true)"
             if [ "\$DB_STATUS" = "healthy" ]; then break; fi
             if [ "\$DB_STATUS" = "unhealthy" ]; then
               docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=80 db
@@ -241,7 +242,8 @@ jobs:
             sh -c 'psql -U postgres -v db_password="\$DB_PASSWORD"'
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
           for i in {1..90}; do
-            STATUS="$(docker inspect --format '{{.State.Health.Status}}' "\$COMPOSE_PROJECT-backend-1" 2>/dev/null || true)"
+            BACKEND_CONTAINER="$(docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" ps -q backend)"
+            STATUS="$(docker inspect --format '{{.State.Health.Status}}' "\$BACKEND_CONTAINER" 2>/dev/null || true)"
             if [ "\$STATUS" = "healthy" ]; then exit 0; fi
             if [ "\$STATUS" = "unhealthy" ]; then
               docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=80 backend
