@@ -14,13 +14,17 @@ on:
         options:
           - staging
           - production
+  workflow_run:
+    workflows: ["Build & Push Docker Images"]
+    types: [completed]
 
 concurrency:
-  group: deploy-${{ github.event.inputs.environment || 'production' }}-${{ github.run_id }}
+  group: deploy-${{ github.event.inputs.environment || 'production' }}-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,6 +37,9 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "ref=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
             echo "env=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+            echo "env=production" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v4
