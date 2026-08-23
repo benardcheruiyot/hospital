@@ -26,6 +26,8 @@ jobs:
   deploy:
     if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_USER: deploy
     permissions:
       contents: read
     environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'production' }}
@@ -68,10 +70,6 @@ jobs:
             echo "ERROR: DEPLOY_HOST not set"
             exit 1
           fi
-          if [ -z "${{ secrets.DEPLOY_USER }}" ]; then
-            echo "ERROR: DEPLOY_USER not set"
-            exit 1
-          fi
           if [ -z "${{ secrets.DEPLOY_KEY }}" ]; then
             echo "ERROR: DEPLOY_KEY not set"
             exit 1
@@ -110,7 +108,7 @@ jobs:
       - name: Verify SSH access
         env:
           DEPLOY_HOST: ${{ steps.host.outputs.value }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_USER: ${{ env.DEPLOY_USER }}
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -o PubkeyAuthentication=yes \
             -o PreferredAuthentications=publickey -o ConnectTimeout=15 \
@@ -119,7 +117,7 @@ jobs:
       - name: Verify and fix deploy user home directory
         env:
           DEPLOY_HOST: ${{ steps.host.outputs.value }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_USER: ${{ env.DEPLOY_USER }}
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" <<'HOME_FIX_EOF'
           set -e
@@ -149,7 +147,7 @@ jobs:
       - name: Create deployment directory
         if: steps.refs.outputs.env == 'production'
         run: |
-            ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }} <<'DEPLOY_EOF'
+            ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} <<'DEPLOY_EOF'
             set -e
             # Create directories with proper permissions
             for dir in "~/hospital-digital-platform" "~/hospital-digital-platform/ssl" "~/hospital-digital-platform/logs" "~/hospital-digital-platform/backups"; do
@@ -177,13 +175,13 @@ jobs:
             docker-compose.staging.yml \
             .env.example \
             nginx.conf \
-            ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }}:~/hospital-digital-platform/
+            deploy@${{ steps.host.outputs.value }}:~/hospital-digital-platform/
 
       - name: Configure production environment
         if: steps.refs.outputs.env == 'production'
         env:
           DEPLOY_HOST: ${{ steps.host.outputs.value }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_USER: ${{ env.DEPLOY_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           CLIENT_URL: ${{ secrets.CLIENT_URL }}
@@ -214,7 +212,7 @@ jobs:
         run: |
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="${{ steps.image.outputs.tag }}"
-          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }} <<EOF
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} <<EOF
           cd ~/hospital-digital-platform
 
           if [ "\$ENVIRONMENT" = "staging" ]; then
