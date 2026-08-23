@@ -1,7 +1,5 @@
 name: hospital-platform-production
 
-version: '3.9'
-
 services:
   db:
     image: postgres:16-alpine

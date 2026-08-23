@@ -167,6 +167,11 @@ jobs:
             .env.example \
             nginx.conf \
             deploy@${{ steps.host.outputs.value }}:/home/deploy/hospital-digital-platform/
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} \
+            "mkdir -p /home/deploy/hospital-digital-platform/frontend"
+          scp -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key \
+            frontend/nginx.conf \
+            deploy@${{ steps.host.outputs.value }}:/home/deploy/hospital-digital-platform/frontend/nginx.conf
 
       - name: Configure production environment
         if: steps.refs.outputs.env == 'production'
@@ -200,6 +205,8 @@ jobs:
           rm -f .env.deploy .env.deploy.b64
       
       - name: Deploy with Docker Compose
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="${{ steps.image.outputs.tag }}"
@@ -221,6 +228,19 @@ jobs:
           test -f .env || { echo "Missing /home/deploy/hospital-digital-platform/.env"; exit 1; }
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" config -q
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d db
+          for i in {1..30}; do
+            DB_STATUS="$(docker inspect --format '{{.State.Health.Status}}' "\$COMPOSE_PROJECT-db-1" 2>/dev/null || true)"
+            if [ "\$DB_STATUS" = "healthy" ]; then break; fi
+            if [ "\$DB_STATUS" = "unhealthy" ]; then
+              docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=80 db
+              exit 1
+            fi
+            sleep 2
+          done
+          printf '%s\n' "ALTER ROLE postgres PASSWORD :'db_password';" | \
+            docker exec -i -e DB_PASSWORD="\$DB_PASSWORD" "\$COMPOSE_PROJECT-db-1" \
+            psql -U postgres -v db_password="\$DB_PASSWORD"
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
           for i in {1..30}; do
             STATUS="$(docker inspect --format '{{.State.Health.Status}}' \"\$COMPOSE_PROJECT-backend-1\" 2>/dev/null || true)"
