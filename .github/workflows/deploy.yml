@@ -121,7 +121,7 @@ jobs:
         if: steps.refs.outputs.env == 'production'
         run: |
             ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }} \
-            "mkdir -p ~/hospital-digital-platform/ssl ~/hospital-digital-platform/logs ~/hospital-digital-platform/backups && if [ ! -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-platform/ssl/fullchain.pem ]; then cp ~/hospital-platform/ssl/fullchain.pem ~/hospital-digital-platform/ssl/fullchain.pem; fi && if [ ! -f ~/hospital-digital-platform/ssl/privkey.pem ] && [ -f ~/hospital-platform/ssl/privkey.pem ]; then cp ~/hospital-platform/ssl/privkey.pem ~/hospital-digital-platform/ssl/privkey.pem; fi && test -f ~/hospital-digital-platform/ssl/fullchain.pem && test -f ~/hospital-digital-platform/ssl/privkey.pem"
+            "mkdir -p ~/hospital-digital-platform/ssl ~/hospital-digital-platform/logs ~/hospital-digital-platform/backups && test -r ~/hospital-digital-platform/ssl/fullchain.pem && test -r ~/hospital-digital-platform/ssl/privkey.pem"
       
       - name: Copy files to server
         run: |
