@@ -209,6 +209,7 @@ jobs:
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="${{ steps.image.outputs.tag }}"
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "${{ env.DEPLOY_USER }}@${{ steps.host.outputs.value }}" <<EOF
+          set -e
           cd /home/deploy/hospital-digital-platform
 
           if [ "\$ENVIRONMENT" = "staging" ]; then
@@ -225,7 +226,17 @@ jobs:
 
           test -f .env || { echo "Missing /home/deploy/hospital-digital-platform/.env"; exit 1; }
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" config -q
-          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull
+          for attempt in {1..12}; do
+            if docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull; then
+              break
+            fi
+            if [ "\$attempt" -eq 12 ]; then
+              echo "ERROR: deployment images were not available from GHCR after 120 seconds"
+              exit 1
+            fi
+            echo "Waiting for GHCR image propagation (\$attempt/12)..."
+            sleep 10
+          done
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --wait --wait-timeout 180 db
           printf '%s\n' "ALTER ROLE postgres PASSWORD :'db_password';" | \
             docker exec -i -e DB_PASSWORD="$DB_PASSWORD" "\$COMPOSE_PROJECT-db-1" \
