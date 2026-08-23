@@ -63,21 +63,34 @@ jobs:
           fi
       
       - name: Setup SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
+          ssh-keygen -lf ~/.ssh/deploy_key.pub
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Verify SSH access
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 \
+            -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" 'printf "SSH authentication succeeded for %s\\n" "$USER"'
       
       - name: Create deployment directory
         if: steps.refs.outputs.env == 'production'
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "mkdir -p ~/hospital-digital-platform/ssl && if [ ! -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-platform/ssl/fullchain.pem ]; then cp ~/hospital-platform/ssl/fullchain.pem ~/hospital-digital-platform/ssl/fullchain.pem; fi && if [ ! -f ~/hospital-digital-platform/ssl/privkey.pem ] && [ -f ~/hospital-platform/ssl/privkey.pem ]; then cp ~/hospital-platform/ssl/privkey.pem ~/hospital-digital-platform/ssl/privkey.pem; fi && test -f ~/hospital-digital-platform/ssl/fullchain.pem && test -f ~/hospital-digital-platform/ssl/privkey.pem"
       
       - name: Copy files to server
         run: |
-          scp -i ~/.ssh/deploy_key -r \
+          scp -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key -r \
             docker-compose.prod.yml \
             docker-compose.staging.yml \
             .env.example \
@@ -88,7 +101,7 @@ jobs:
         run: |
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="$(echo "${{ steps.refs.outputs.ref }}" | tr '/' '-')"
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} <<EOF
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} <<EOF
           cd ~/hospital-digital-platform
 
           if [ "\$ENVIRONMENT" = "staging" ]; then

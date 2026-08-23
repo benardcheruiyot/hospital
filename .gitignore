@@ -7,6 +7,11 @@ node_modules/
 .env.*
 .env.local
 
+# Deployment credentials
+DEPLOY_KEY.txt
+deploy_key
+deploy_key.pub
+
 # Build output
 dist/
 build/
