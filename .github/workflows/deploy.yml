@@ -168,7 +168,7 @@ jobs:
             nginx.conf \
             deploy@${{ steps.host.outputs.value }}:/home/deploy/hospital-digital-platform/
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} \
-            "mkdir -p /home/deploy/hospital-digital-platform/frontend"
+            "rm -rf /home/deploy/hospital-digital-platform/frontend/nginx.conf && mkdir -p /home/deploy/hospital-digital-platform/frontend"
           scp -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key \
             frontend/nginx.conf \
             deploy@${{ steps.host.outputs.value }}:/home/deploy/hospital-digital-platform/frontend/nginx.conf
@@ -208,6 +208,7 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
+          test -n "$DB_PASSWORD" || { echo "ERROR: DB_PASSWORD is empty"; exit 1; }
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="${{ steps.image.outputs.tag }}"
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} <<EOF
@@ -239,8 +240,8 @@ jobs:
             sleep 2
           done
           printf '%s\n' "ALTER ROLE postgres PASSWORD :'db_password';" | \
-            docker exec -i -e DB_PASSWORD="\$DB_PASSWORD" "\$COMPOSE_PROJECT-db-1" \
-            psql -U postgres -v db_password="\$DB_PASSWORD"
+            docker exec -i "\$COMPOSE_PROJECT-db-1" \
+            psql -U postgres -v db_password="$DB_PASSWORD"
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
           for i in {1..30}; do
             STATUS="$(docker inspect --format '{{.State.Health.Status}}' \"\$COMPOSE_PROJECT-backend-1\" 2>/dev/null || true)"
