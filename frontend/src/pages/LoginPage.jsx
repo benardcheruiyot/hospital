@@ -111,49 +111,7 @@ export default function LoginPage() {
           <Link to="/register" className="btn btn-secondary">Create account</Link>
         </div>
       </header>
-      <main className="auth-layout auth-layout-wide">
-        <section className="auth-panel auth-panel-featured auth-hero-panel">
-          <div className="auth-hero-badges">
-            <span className="badge badge-confirmed">Secure access</span>
-            <span className="badge badge-scheduled">Unified login</span>
-            <span className="badge badge-completed">Role-aware workspace</span>
-          </div>
-          <div className="page-eyebrow auth-pretitle">
-            One shared workspace for patients and hospital staff
-          </div>
-          <h1 className="auth-title">Sign in to your care workspace</h1>
-          <p className="auth-copy">
-            {portal === 'patient'
-              ? 'Sign in to manage your appointments, registration, messaging, and telehealth care.'
-              : 'Sign in to manage patient workflows, schedules, consultations, and hospital operations.'}
-          </p>
-          <div className="auth-hero-stats">
-            <div className="auth-hero-stat">
-              <span>{portal === 'patient' ? 'Patient access' : 'Provider access'}</span>
-              <strong>{portal === 'patient' ? 'Your care tools ready in one place' : 'Your clinical workspace ready to use'}</strong>
-            </div>
-            <div className="auth-hero-stat">
-              <span>Shared platform</span>
-              <strong>{portal === 'patient' ? 'Same ecosystem for patients and staff' : 'Unified system with role-based controls'}</strong>
-            </div>
-          </div>
-          <div className="auth-hero-list">
-            <div className="auth-tile">
-              <span>{portal === 'patient' ? 'Patient journey' : 'Provider workflow'}</span>
-              <strong>{portal === 'patient' ? 'Appointments, intake, follow-up' : 'Consults, notes, schedules'}</strong>
-            </div>
-            <div className="auth-tile">
-              <span>Connected care</span>
-              <strong>{portal === 'patient' ? 'One account for your health experience' : 'One workspace for your care team'}</strong>
-            </div>
-          </div>
-          <div className="auth-feature-list auth-feature-highlight">
-            <div className="auth-feature-item">Secure sign-in with the same workspace for every role</div>
-            <div className="auth-feature-item">Patient and staff portals in one unified platform</div>
-            <div className="auth-feature-item">Telemedicine, messaging, and scheduling together</div>
-          </div>
-        </section>
-
+      <main className="auth-layout auth-layout-form-only">
         <Card className="auth-panel auth-card auth-card-form">
           <p className="page-eyebrow">Shared portal access</p>
           <h2>{portal === 'patient' ? 'Patient Portal Sign In' : 'Staff Portal Sign In'}</h2>

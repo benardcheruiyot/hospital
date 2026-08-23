@@ -100,50 +100,19 @@ export default function RegisterPage() {
       </header>
       <main className="auth-layout auth-layout-wide">
         <section className="auth-panel auth-panel-featured auth-hero-panel">
-          <div className="auth-hero-badges">
-            <span className="badge badge-confirmed">Patient-first</span>
-            <span className="badge badge-completed">Secure access</span>
-          </div>
           <div className="page-eyebrow auth-pretitle">
-            Get started with secure patient portal access
+            Patient portal
           </div>
-          <h1 className="auth-title">One account for appointments, messaging, and care coordination</h1>
+          <h1 className="auth-title">Your care, in one place</h1>
           <p className="auth-copy">
-            Create a secure account to manage appointments, registration, messages, and virtual visits in one polished care workspace.
+            Create an account to manage appointments, messages, registration, and virtual visits securely.
           </p>
-          <div className="auth-hero-stats">
-            <div className="auth-hero-stat">
-              <span>Fast registration</span>
-              <strong>Set up your patient account and access care tools quickly</strong>
-            </div>
-            <div className="auth-hero-stat">
-              <span>Connected care</span>
-              <strong>Secure access for patients to appointments, messages, and telehealth</strong>
-            </div>
-          </div>
-          <div className="auth-hero-list">
-            <div className="auth-tile">
-              <span>Patient intake</span>
-              <strong>Complete forms, verify details, and prepare for care</strong>
-            </div>
-            <div className="auth-tile">
-              <span>Platform access</span>
-              <strong>Unified navigation for patients and providers</strong>
-            </div>
-          </div>
-          <div className="auth-feature-list auth-feature-highlight">
-            <div className="auth-feature-item">Encrypted registration and secure patient profiles</div>
-            <div className="auth-feature-item">Scheduling, messaging, and follow-up in one place</div>
-            <div className="auth-feature-item">A seamless patient experience across care pathways</div>
-          </div>
         </section>
 
         <Card className="auth-panel auth-card auth-card-form">
           <p className="page-eyebrow">Patient registration</p>
           <h2>Create your TERRALINK Health patient account</h2>
-          <p className="auth-card-description">
-            Register to manage appointments, messages, and telehealth care securely.
-          </p>
+          <p className="auth-card-description">Use your details to create a secure patient account.</p>
           {error && (
             <div className="alert alert-error" role="alert" aria-live="assertive">
               {error}
@@ -209,12 +178,6 @@ export default function RegisterPage() {
           <p style={{ marginTop: 16, fontSize: '0.88rem' }}>
             Already have an account? <Link to="/login">Sign in</Link>
           </p>
-          <div className="card auth-tip-card" style={{ padding: 16, marginTop: 12 }}>
-            <div className="page-eyebrow">What you&apos;ll get</div>
-            <p className="section-copy" style={{ marginBottom: 0 }}>
-              A patient account that unlocks appointments, messaging, and virtual care while keeping your care journey connected with providers.
-            </p>
-          </div>
           <p style={{ marginTop: 8, fontSize: '0.88rem' }}>
             <Link to="/">Back to overview</Link>
           </p>

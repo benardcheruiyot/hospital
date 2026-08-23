@@ -572,6 +572,11 @@ textarea:focus-visible {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
 }
 
+.auth-layout-form-only {
+  max-width: 620px;
+  margin: 40px auto 0;
+}
+
 .auth-panel-featured.auth-hero-panel {
   display: grid;
   gap: 22px;
@@ -1373,6 +1378,7 @@ textarea:focus {
 @media (max-width: 640px) {
   .auth-layout,
   .auth-layout-wide,
+  .auth-layout-form-only,
   .reference-hero,
   .dashboard-hero-card,
   .dashboard-status-actions,
