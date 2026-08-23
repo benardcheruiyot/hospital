@@ -1,10 +1,6 @@
 name: Deploy to Production
 
 on:
-  workflow_run:
-    workflows: ["Build & Push Docker Images"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -25,7 +21,6 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,9 +33,6 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "ref=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
             echo "env=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
-            echo "env=production" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v4
