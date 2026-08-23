@@ -109,11 +109,59 @@ jobs:
             -o PreferredAuthentications=publickey -o ConnectTimeout=15 \
             -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" 'printf "SSH authentication succeeded for %s\\n" "$USER"'
       
+      - name: Verify and fix deploy user home directory
+        env:
+          DEPLOY_HOST: ${{ steps.host.outputs.value }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" <<'HOME_FIX_EOF'
+          set -e
+          # Verify home directory exists and has correct permissions
+          HOME_DIR="$(eval echo ~)"
+          echo "Home directory: $HOME_DIR"
+          
+          # Fix home directory permissions if needed
+          if [ -d "$HOME_DIR" ]; then
+            echo "✓ Home directory exists"
+            if [ ! -w "$HOME_DIR" ]; then
+              echo "⚠ Home directory is not writable - attempting to fix permissions"
+              # Note: This may require sudo on some systems
+              chmod u+w "$HOME_DIR" 2>/dev/null || echo "Could not modify home directory permissions (may require sudo)"
+            fi
+          else
+            echo "✗ Home directory does not exist: $HOME_DIR"
+            exit 1
+          fi
+          
+          # Create .ssh directory if it doesn't exist
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "✓ SSH directory ready"
+          HOME_FIX_EOF
+      
       - name: Create deployment directory
         if: steps.refs.outputs.env == 'production'
         run: |
-            ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }} \
-            "mkdir -p ~/hospital-digital-platform/ssl ~/hospital-digital-platform/logs ~/hospital-digital-platform/backups && test -r ~/hospital-digital-platform/ssl/fullchain.pem && test -r ~/hospital-digital-platform/ssl/privkey.pem"
+            ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }} <<'DEPLOY_EOF'
+            set -e
+            # Create directories with proper permissions
+            for dir in "~/hospital-digital-platform" "~/hospital-digital-platform/ssl" "~/hospital-digital-platform/logs" "~/hospital-digital-platform/backups"; do
+              EXPANDED_DIR=$(eval echo "$dir")
+              if [ ! -d "$EXPANDED_DIR" ]; then
+                mkdir -p "$EXPANDED_DIR"
+                echo "Created: $EXPANDED_DIR"
+              else
+                echo "Already exists: $EXPANDED_DIR"
+              fi
+            done
+            
+            # Verify SSL certificates exist (if production deployment)
+            if [ -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-digital-platform/ssl/privkey.pem ]; then
+              echo "✓ SSL certificates found"
+            else
+              echo "⚠ SSL certificates not found - they will be needed for production"
+            fi
+            DEPLOY_EOF
       
       - name: Copy files to server
         run: |

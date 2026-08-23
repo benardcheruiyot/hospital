@@ -57,6 +57,16 @@ else
     echo "✓ $DEPLOY_USER user already exists"
 fi
 
+# Fix home directory permissions (critical for SSH deployments)
+echo -e "${GREEN}🔐 Fixing home directory permissions...${NC}"
+if [ ! -d "$DEPLOY_HOME" ]; then
+    mkdir -p "$DEPLOY_HOME"
+    echo "Created home directory: $DEPLOY_HOME"
+fi
+chown $DEPLOY_USER:$DEPLOY_USER "$DEPLOY_HOME"
+chmod 755 "$DEPLOY_HOME"
+echo "✓ Home directory permissions fixed: $DEPLOY_HOME (mode 755)"
+
 # Add deploy user to docker group
 usermod -aG docker $DEPLOY_USER
 newgrp docker << END

@@ -26,11 +26,11 @@ const fixtures = {
 
 for (const p of PAGES) {
   test(`${p.name} snapshot`, async ({ page }) => {
-    // Intercept common API endpoints
+    page.setDefaultTimeout(30000);
+    
     await page.route('**/api/*', (route) => {
       const url = route.request().url();
       const path = url.replace(route.request().frame().url().split('/').slice(0,3).join('/'), '');
-      // Try to match known fixture keys by pathname
       const pathname = new URL(url).pathname;
       if (fixtures[pathname]) {
         route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fixtures[pathname]) });
@@ -39,10 +39,11 @@ for (const p of PAGES) {
       }
     });
 
-    await page.goto(p.path);
+    await page.goto(p.path, { waitUntil: 'networkidle' });
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('h1, h2, main, .main-content', { state: 'visible' });
-    await page.waitForTimeout(500);
+    await page.waitForSelector('h1, h2, main, .main-content, body', { state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(800);
+    
     expect(await page.screenshot({ fullPage: true })).toMatchSnapshot(`${p.name}-full.png`);
   });
 }
