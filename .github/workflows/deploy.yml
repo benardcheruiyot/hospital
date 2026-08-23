@@ -16,7 +16,7 @@ on:
           - production
 
 concurrency:
-  group: deploy-${{ github.ref_name || github.event.workflow_run.head_branch }}
+  group: deploy-${{ github.event.inputs.environment || 'production' }}-${{ github.run_id }}
   cancel-in-progress: true
 
 jobs:
