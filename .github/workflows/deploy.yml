@@ -121,27 +121,12 @@ jobs:
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" <<'HOME_FIX_EOF'
           set -e
-          # Verify home directory exists and has correct permissions
-          HOME_DIR="$(eval echo ~)"
-          echo "Home directory: $HOME_DIR"
-          
-          # Fix home directory permissions if needed
-          if [ -d "$HOME_DIR" ]; then
-            echo "✓ Home directory exists"
-            if [ ! -w "$HOME_DIR" ]; then
-              echo "⚠ Home directory is not writable - attempting to fix permissions"
-              # Note: This may require sudo on some systems
-              chmod u+w "$HOME_DIR" 2>/dev/null || echo "Could not modify home directory permissions (may require sudo)"
-            fi
-          else
-            echo "✗ Home directory does not exist: $HOME_DIR"
-            exit 1
-          fi
-          
-          # Create .ssh directory if it doesn't exist
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "✓ SSH directory ready"
+          DEPLOY_HOME=/home/deploy
+          test -d "$DEPLOY_HOME" || { echo "ERROR: $DEPLOY_HOME does not exist; run scripts/setup-server.sh as root"; exit 1; }
+          test -w "$DEPLOY_HOME" || { echo "ERROR: $DEPLOY_HOME is not writable by deploy; fix its owner and mode"; exit 1; }
+          mkdir -p "$DEPLOY_HOME/.ssh"
+          chmod 700 "$DEPLOY_HOME/.ssh"
+          echo "✓ Deploy home is ready: $DEPLOY_HOME"
           HOME_FIX_EOF
       
       - name: Create deployment directory
@@ -149,19 +134,13 @@ jobs:
         run: |
             ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} <<'DEPLOY_EOF'
             set -e
-            # Create directories with proper permissions
-            for dir in "~/hospital-digital-platform" "~/hospital-digital-platform/ssl" "~/hospital-digital-platform/logs" "~/hospital-digital-platform/backups"; do
-              EXPANDED_DIR=$(eval echo "$dir")
-              if [ ! -d "$EXPANDED_DIR" ]; then
-                mkdir -p "$EXPANDED_DIR"
-                echo "Created: $EXPANDED_DIR"
-              else
-                echo "Already exists: $EXPANDED_DIR"
-              fi
-            done
+            DEPLOY_HOME=/home/deploy
+            APP_DIR="$DEPLOY_HOME/hospital-digital-platform"
+            mkdir -p "$APP_DIR/ssl" "$APP_DIR/logs" "$APP_DIR/backups"
+            echo "Deployment directory ready: $APP_DIR"
             
             # Verify SSL certificates exist (if production deployment)
-            if [ -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-digital-platform/ssl/privkey.pem ]; then
+            if [ -f "$APP_DIR/ssl/fullchain.pem" ] && [ -f "$APP_DIR/ssl/privkey.pem" ]; then
               echo "✓ SSL certificates found"
             else
               echo "⚠ SSL certificates not found - they will be needed for production"
@@ -175,7 +154,7 @@ jobs:
             docker-compose.staging.yml \
             .env.example \
             nginx.conf \
-            deploy@${{ steps.host.outputs.value }}:~/hospital-digital-platform/
+            deploy@${{ steps.host.outputs.value }}:/home/deploy/hospital-digital-platform/
 
       - name: Configure production environment
         if: steps.refs.outputs.env == 'production'
@@ -203,9 +182,9 @@ jobs:
           EOF
           base64 -w 0 .env.deploy > .env.deploy.b64
           scp -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key .env.deploy.b64 \
-            "$DEPLOY_USER@$DEPLOY_HOST:~/hospital-digital-platform/.env.deploy.b64"
+            "$DEPLOY_USER@$DEPLOY_HOST:/home/deploy/hospital-digital-platform/.env.deploy.b64"
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-            "cd ~/hospital-digital-platform && base64 -d .env.deploy.b64 > .env && chmod 600 .env && rm -f .env.deploy.b64"
+            "cd /home/deploy/hospital-digital-platform && base64 -d .env.deploy.b64 > .env && chmod 600 .env && rm -f .env.deploy.b64"
           rm -f .env.deploy .env.deploy.b64
       
       - name: Deploy with Docker Compose
@@ -213,7 +192,7 @@ jobs:
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="${{ steps.image.outputs.tag }}"
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key deploy@${{ steps.host.outputs.value }} <<EOF
-          cd ~/hospital-digital-platform
+          cd /home/deploy/hospital-digital-platform
 
           if [ "\$ENVIRONMENT" = "staging" ]; then
             COMPOSE_FILE="docker-compose.staging.yml"
@@ -227,7 +206,7 @@ jobs:
             export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:${IMAGE_TAG}"
           fi
 
-          test -f .env || { echo "Missing ~/hospital-digital-platform/.env"; exit 1; }
+          test -f .env || { echo "Missing /home/deploy/hospital-digital-platform/.env"; exit 1; }
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" config -q
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
