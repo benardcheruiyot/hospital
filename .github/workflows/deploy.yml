@@ -71,7 +71,7 @@ jobs:
             exit 1
           fi
           if [ "${{ steps.refs.outputs.env }}" = "production" ]; then
-            for name in DB_PASSWORD JWT_SECRET CLIENT_URL API_URL SOCKET_URL; do
+            for name in DB_PASSWORD JWT_SECRET CLIENT_URL API_URL SOCKET_URL GOOGLE_CLIENT_ID; do
               if [ -z "${!name}" ]; then
                 echo "ERROR: $name not set for production"
                 exit 1
@@ -84,6 +84,7 @@ jobs:
           CLIENT_URL: ${{ secrets.CLIENT_URL }}
           API_URL: ${{ secrets.API_URL }}
           SOCKET_URL: ${{ secrets.SOCKET_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       
       - name: Setup SSH
         env:
