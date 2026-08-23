@@ -39,13 +39,20 @@ jobs:
             echo "ref=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
             echo "env=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
           else
-            echo "ref=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
             echo "env=production" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.refs.outputs.ref }}
+
+      - name: Resolve image tag
+        id: image
+        run: |
+          DEPLOY_SHA="$(git rev-parse HEAD)"
+          echo "sha=$DEPLOY_SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=main-${DEPLOY_SHA:0:7}" >> "$GITHUB_OUTPUT"
       
       - name: Validate environment variables
         run: |
@@ -86,7 +93,7 @@ jobs:
         if: steps.refs.outputs.env == 'production'
         run: |
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "mkdir -p ~/hospital-digital-platform/ssl && if [ ! -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-platform/ssl/fullchain.pem ]; then cp ~/hospital-platform/ssl/fullchain.pem ~/hospital-digital-platform/ssl/fullchain.pem; fi && if [ ! -f ~/hospital-digital-platform/ssl/privkey.pem ] && [ -f ~/hospital-platform/ssl/privkey.pem ]; then cp ~/hospital-platform/ssl/privkey.pem ~/hospital-digital-platform/ssl/privkey.pem; fi && test -f ~/hospital-digital-platform/ssl/fullchain.pem && test -f ~/hospital-digital-platform/ssl/privkey.pem"
+            "mkdir -p ~/hospital-digital-platform/ssl ~/hospital-digital-platform/logs ~/hospital-digital-platform/backups && if [ ! -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-platform/ssl/fullchain.pem ]; then cp ~/hospital-platform/ssl/fullchain.pem ~/hospital-digital-platform/ssl/fullchain.pem; fi && if [ ! -f ~/hospital-digital-platform/ssl/privkey.pem ] && [ -f ~/hospital-platform/ssl/privkey.pem ]; then cp ~/hospital-platform/ssl/privkey.pem ~/hospital-digital-platform/ssl/privkey.pem; fi && test -f ~/hospital-digital-platform/ssl/fullchain.pem && test -f ~/hospital-digital-platform/ssl/privkey.pem"
       
       - name: Copy files to server
         run: |
@@ -100,7 +107,7 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
-          IMAGE_TAG="$(echo "${{ steps.refs.outputs.ref }}" | tr '/' '-')"
+          IMAGE_TAG="${{ steps.image.outputs.tag }}"
           ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} <<EOF
           cd ~/hospital-digital-platform
 
@@ -112,15 +119,26 @@ jobs:
           else
             COMPOSE_FILE="docker-compose.prod.yml"
             COMPOSE_PROJECT="hospital-platform-production"
-            export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:\$IMAGE_TAG"
-            export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:\$IMAGE_TAG"
+            export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:${IMAGE_TAG}"
+            export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:${IMAGE_TAG}"
           fi
 
+          test -f .env || { echo "Missing ~/hospital-digital-platform/.env"; exit 1; }
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" config -q
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull
-          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d
-          sleep 10
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
+          for i in {1..30}; do
+            STATUS="$(docker inspect --format '{{.State.Health.Status}}' \"\$COMPOSE_PROJECT-backend-1\" 2>/dev/null || true)"
+            if [ "\$STATUS" = "healthy" ]; then exit 0; fi
+            if [ "\$STATUS" = "unhealthy" ]; then
+              docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=80 backend
+              exit 1
+            fi
+            sleep 2
+          done
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" ps
-          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=20
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=80 backend
+          exit 1
           EOF
 
       - name: Verify deployment
@@ -133,7 +151,7 @@ jobs:
           fi
 
           for i in {1..30}; do
-            if curl --fail --silent --show-error "$PROTOCOL://$HOST/api/health" 2>/dev/null; then
+            if curl --fail --silent --show-error --connect-timeout 5 "$PROTOCOL://$HOST/api/health"; then
               echo "✓ Application is healthy"
               exit 0
             fi
