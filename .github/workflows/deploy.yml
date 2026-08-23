@@ -19,7 +19,7 @@ on:
     types: [completed]
 
 concurrency:
-  group: deploy-${{ github.event.inputs.environment || 'production' }}-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: deploy-${{ github.run_id }}
   cancel-in-progress: true
 
 jobs:
