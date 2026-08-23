@@ -23,11 +23,6 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
-      - name: Start preview server
-        working-directory: frontend
-        run: |
-          npx http-server dist -p 5173 &
-          sleep 2
       - name: Install Playwright browsers
         working-directory: frontend
         run: npx playwright install --with-deps
