@@ -1,37 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const FEATURES = [
-  { icon: '↗', title: 'Reduced Wait Times', body: 'Real-time queue tracking and online appointment booking' },
-  { icon: '▣', title: 'Secure Records', body: 'Encrypted patient data with role-based access control' },
-  { icon: '◉', title: 'Telemedicine', body: 'Virtual consultations from anywhere in Kenya' },
-  { icon: '▥', title: 'Real-Time Analytics', body: 'Live dashboards for hospital performance monitoring' },
-];
-
-const PORTALS = [
-  {
-    icon: '＋',
-    title: 'Patient Portal',
-    body: 'Sign in to manage appointments, registration, messaging, and telemedicine.',
-    to: '/portal/patient',
-  },
-  {
-    icon: '♧',
-    title: 'Healthcare Provider',
-    body: 'Sign in to manage patient workflows, schedules, and virtual consultations.',
-    to: '/portal/staff',
-  },
-  {
-    icon: '⌘',
-    title: 'Administrator',
-    body: 'Sign in for hospital operations, user provisioning, and analytics.',
-    to: '/admin',
-  },
-];
-
 export default function LandingPage() {
   const { user, loading } = useAuth();
+  const [apiStatus, setApiStatus] = useState('checking');
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then((response) => setApiStatus(response.ok ? 'online' : 'offline'))
+      .catch(() => setApiStatus('offline'));
+  }, []);
 
   if (!loading && user) {
     return <Navigate to="/dashboard" replace />;
@@ -53,55 +32,40 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
-      <section className="reference-hero" aria-label="TERRALINK Health overview">
-        <div className="reference-hero-art" aria-hidden="true">
-          <div className="reference-orbit reference-orbit-one" />
-          <div className="reference-orbit reference-orbit-two" />
-          <div className="reference-cross">✚</div>
-          <div className="reference-art-card reference-art-card-top">24/7<br /><strong>Connected care</strong></div>
-          <div className="reference-art-card reference-art-card-bottom">Live queue<br /><strong>Updated now</strong></div>
-        </div>
-        <div className="reference-hero-copy">
-          <div className="reference-kicker"><span>✦</span> Transforming Healthcare in Kenya</div>
-          <h1>Enhancing Hospital Operations <span>&amp; Patient Experience</span></h1>
-          <p>An integrated digital platform for patient engagement, digital registration, telemedicine, and real-time analytics — built for Kenyan hospitals.</p>
-          <div className="reference-hero-actions">
-            <Link className="reference-primary-action" to="/register"><span>＋</span> Get Started — Register</Link>
-            <Link className="reference-secondary-action" to="/login?portal=patient"><span>♧</span> Sign In</Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="reference-features" aria-label="Platform benefits">
-        {FEATURES.map((feature) => (
-          <article className="reference-feature" key={feature.title}>
-            <div className="reference-feature-icon">{feature.icon}</div>
-            <div>
-              <h2>{feature.title}</h2>
-              <p>{feature.body}</p>
+      <main className="landing-main">
+        <section className="landing-intro" aria-label="TERRALINK Health overview">
+          <div>
+            <p className="reference-kicker">Digital care access</p>
+            <h1>Healthcare, without the runaround.</h1>
+            <p>Book visits, stay in touch with your care team, and manage your hospital journey from one secure account.</p>
+            <div className="landing-status" aria-live="polite">
+              <span className={`status-dot status-${apiStatus}`} />
+              {apiStatus === 'checking' ? 'Checking service status' : apiStatus === 'online' ? 'Services operational' : 'Service status unavailable'}
             </div>
-          </article>
-        ))}
-      </section>
+          </div>
+          <div className="landing-intro-mark" aria-hidden="true">✚</div>
+        </section>
 
-      <section className="reference-portals" aria-label="Portal access">
-        <div className="reference-section-heading">
-          <p className="reference-kicker">Your care, connected</p>
-          <h2>Access Your Portal</h2>
-          <p>Select your role to get started</p>
-        </div>
-        <div className="reference-portal-grid">
-          {PORTALS.map((portal) => (
-            <Link className="reference-portal-card" to={portal.to} key={portal.title}>
-              <div className="reference-portal-icon">{portal.icon}</div>
-              <h3>{portal.title}</h3>
-              <p>{portal.body}</p>
-              <span className="reference-portal-link">Enter Portal <b>→</b></span>
+        <section className="landing-access" aria-label="Portal access">
+          <div className="landing-section-heading">
+            <p className="reference-kicker">Choose your access</p>
+            <h2>Start where you are</h2>
+          </div>
+          <div className="landing-access-grid">
+            <Link className="landing-access-card" to="/login?portal=patient">
+              <span className="landing-access-label">For patients</span>
+              <h3>Patient portal</h3>
+              <p>Appointments, registration, messages, and virtual visits.</p>
+              <strong>Sign in <span aria-hidden="true">→</span></strong>
             </Link>
-          ))}
-        </div>
-      </section>
+            <Link className="landing-access-card landing-access-card-dark" to="/login?portal=staff">
+              <span className="landing-access-label">For care teams</span>
+              <h3>Staff portal</h3>
+              <p>Schedules, consultations, patient workflows, and telehealth.</p>
+              <strong>Sign in <span aria-hidden="true">→</span></strong>
+            </Link>
+          </div>
+        </section>
       </main>
 
       <footer className="reference-footer">
