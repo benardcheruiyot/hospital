@@ -23,7 +23,7 @@ fi
 # Define variables
 DEPLOY_USER="deploy"
 DEPLOY_HOME="/home/$DEPLOY_USER"
-APP_DIR="$DEPLOY_HOME/hospital-platform"
+APP_DIR="$DEPLOY_HOME/hospital-digital-platform"
 ENVIRONMENT=${1:-staging}
 
 if [ "$ENVIRONMENT" != "staging" ] && [ "$ENVIRONMENT" != "production" ]; then
@@ -197,7 +197,7 @@ if [ "$ENVIRONMENT" = "production" ]; then
     BACKUP_SCRIPT="$APP_DIR/backup-db.sh"
     cat > "$BACKUP_SCRIPT" << 'EOFBACKUP'
 #!/bin/bash
-APP_DIR=/home/deploy/hospital-platform
+APP_DIR=/home/deploy/hospital-digital-platform
 BACKUP_DIR=$APP_DIR/backups
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 

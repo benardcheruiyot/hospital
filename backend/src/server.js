@@ -667,7 +667,9 @@ async function start() {
     await sequelize.authenticate();
     console.log('Database connection established.');
 
-    await sequelize.sync();
+    await sequelize.sync({
+      alter: process.env.DB_SYNC_ALTER === 'true' && sequelize.getDialect() === 'postgres',
+    });
     console.log('Models synchronized with the database.');
     await ensureDemoAccounts();
 

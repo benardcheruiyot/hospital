@@ -4,7 +4,7 @@ set -euo pipefail
 
 DOMAIN="${DOMAIN:-terralinkhealth.co.ke}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:?Set CERTBOT_EMAIL to the certificate administrator email}"
-APP_DIR="${APP_DIR:-/home/deploy/hospital-platform}"
+APP_DIR="${APP_DIR:-/home/deploy/hospital-digital-platform}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run this script as root."

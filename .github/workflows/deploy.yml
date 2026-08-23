@@ -73,7 +73,7 @@ jobs:
         if: steps.refs.outputs.env == 'production'
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "mkdir -p ~/hospital-platform/ssl && test -f ~/hospital-platform/ssl/fullchain.pem && test -f ~/hospital-platform/ssl/privkey.pem"
+            "mkdir -p ~/hospital-digital-platform/ssl && if [ ! -f ~/hospital-digital-platform/ssl/fullchain.pem ] && [ -f ~/hospital-platform/ssl/fullchain.pem ]; then cp ~/hospital-platform/ssl/fullchain.pem ~/hospital-digital-platform/ssl/fullchain.pem; fi && if [ ! -f ~/hospital-digital-platform/ssl/privkey.pem ] && [ -f ~/hospital-platform/ssl/privkey.pem ]; then cp ~/hospital-platform/ssl/privkey.pem ~/hospital-digital-platform/ssl/privkey.pem; fi && test -f ~/hospital-digital-platform/ssl/fullchain.pem && test -f ~/hospital-digital-platform/ssl/privkey.pem"
       
       - name: Copy files to server
         run: |
@@ -82,30 +82,32 @@ jobs:
             docker-compose.staging.yml \
             .env.example \
             nginx.conf \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/hospital-platform/
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/hospital-digital-platform/
       
       - name: Deploy with Docker Compose
         run: |
           ENVIRONMENT="${{ steps.refs.outputs.env }}"
           IMAGE_TAG="$(echo "${{ steps.refs.outputs.ref }}" | tr '/' '-')"
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} <<EOF
-          cd ~/hospital-platform
+          cd ~/hospital-digital-platform
 
           if [ "\$ENVIRONMENT" = "staging" ]; then
             COMPOSE_FILE="docker-compose.staging.yml"
+            COMPOSE_PROJECT="hospital-platform-staging"
             export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:develop"
             export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:develop"
           else
             COMPOSE_FILE="docker-compose.prod.yml"
+            COMPOSE_PROJECT="hospital-platform-production"
             export BACKEND_IMAGE="ghcr.io/benardcheruiyot/hospital/backend:\$IMAGE_TAG"
             export FRONTEND_IMAGE="ghcr.io/benardcheruiyot/hospital/frontend:\$IMAGE_TAG"
           fi
 
-          docker compose -f "\$COMPOSE_FILE" pull
-          docker compose -f "\$COMPOSE_FILE" up -d
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" pull
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d
           sleep 10
-          docker compose -f "\$COMPOSE_FILE" ps
-          docker compose -f "\$COMPOSE_FILE" logs --tail=20
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" ps
+          docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" logs --tail=20
           EOF
 
       - name: Verify deployment

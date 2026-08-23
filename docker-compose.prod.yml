@@ -1,3 +1,5 @@
+name: hospital-platform-production
+
 version: '3.9'
 
 services:
@@ -40,6 +42,7 @@ services:
       DB_NAME: ${DB_NAME:-hospital_platform}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:?error}
+      DB_SYNC_ALTER: ${DB_SYNC_ALTER:-true}
       JWT_SECRET: ${JWT_SECRET:?error}
       JWT_EXPIRES_IN: 7d
       RATE_LIMIT_WINDOW_MS: 900000
@@ -92,8 +95,8 @@ services:
     image: nginx:alpine
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HOSPITAL_HTTP_PORT:-80}:80"
+      - "${HOSPITAL_HTTPS_PORT:-443}:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
@@ -110,6 +113,7 @@ services:
 
 volumes:
   db_data_prod:
+    name: hospital-platform_db_data_prod
     driver: local
 
 networks:
