@@ -77,6 +77,20 @@ jobs:
             echo "ERROR: DEPLOY_KEY not set"
             exit 1
           fi
+          if [ "${{ steps.refs.outputs.env }}" = "production" ]; then
+            for name in DB_PASSWORD JWT_SECRET CLIENT_URL API_URL SOCKET_URL; do
+              if [ -z "${!name}" ]; then
+                echo "ERROR: $name not set for production"
+                exit 1
+              fi
+            done
+          fi
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CLIENT_URL: ${{ secrets.CLIENT_URL }}
+          API_URL: ${{ secrets.API_URL }}
+          SOCKET_URL: ${{ secrets.SOCKET_URL }}
       
       - name: Setup SSH
         env:
@@ -117,6 +131,37 @@ jobs:
             .env.example \
             nginx.conf \
             ${{ secrets.DEPLOY_USER }}@${{ steps.host.outputs.value }}:~/hospital-digital-platform/
+
+      - name: Configure production environment
+        if: steps.refs.outputs.env == 'production'
+        env:
+          DEPLOY_HOST: ${{ steps.host.outputs.value }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CLIENT_URL: ${{ secrets.CLIENT_URL }}
+          API_URL: ${{ secrets.API_URL }}
+          SOCKET_URL: ${{ secrets.SOCKET_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        run: |
+          umask 077
+          cat > .env.deploy <<EOF
+          DB_NAME=hospital_platform
+          DB_USER=postgres
+          DB_PASSWORD=$DB_PASSWORD
+          CLIENT_URL=$CLIENT_URL
+          API_URL=$API_URL
+          SOCKET_URL=$SOCKET_URL
+          JWT_SECRET=$JWT_SECRET
+          JWT_EXPIRES_IN=7d
+          GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+          EOF
+          base64 -w 0 .env.deploy > .env.deploy.b64
+          scp -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key .env.deploy.b64 \
+            "$DEPLOY_USER@$DEPLOY_HOST:~/hospital-digital-platform/.env.deploy.b64"
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd ~/hospital-digital-platform && base64 -d .env.deploy.b64 > .env && chmod 600 .env && rm -f .env.deploy.b64"
+          rm -f .env.deploy .env.deploy.b64
       
       - name: Deploy with Docker Compose
         run: |
