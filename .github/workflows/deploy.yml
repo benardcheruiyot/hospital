@@ -243,7 +243,7 @@ jobs:
             docker exec -i -e DB_PASSWORD="$DB_PASSWORD" "\$COMPOSE_PROJECT-db-1" \
             sh -c 'psql -U postgres -v db_password="\$DB_PASSWORD"'
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
-          for i in {1..30}; do
+          for i in {1..90}; do
             STATUS="$(docker inspect --format '{{.State.Health.Status}}' \"\$COMPOSE_PROJECT-backend-1\" 2>/dev/null || true)"
             if [ "\$STATUS" = "healthy" ]; then exit 0; fi
             if [ "\$STATUS" = "unhealthy" ]; then
