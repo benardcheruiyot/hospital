@@ -240,8 +240,8 @@ jobs:
             sleep 2
           done
           printf '%s\n' "ALTER ROLE postgres PASSWORD :'db_password';" | \
-            docker exec -i "\$COMPOSE_PROJECT-db-1" \
-            psql -U postgres -v db_password="$DB_PASSWORD"
+            docker exec -i -e DB_PASSWORD="$DB_PASSWORD" "\$COMPOSE_PROJECT-db-1" \
+            sh -c 'psql -U postgres -v db_password="\$DB_PASSWORD"'
           docker compose --project-name "\$COMPOSE_PROJECT" -f "\$COMPOSE_FILE" up -d --remove-orphans
           for i in {1..30}; do
             STATUS="$(docker inspect --format '{{.State.Health.Status}}' \"\$COMPOSE_PROJECT-backend-1\" 2>/dev/null || true)"
