@@ -114,7 +114,7 @@ export default function LoginPage() {
       <main className="auth-layout auth-layout-form-only">
         <Card className="auth-panel auth-card auth-card-form">
           <p className="page-eyebrow">Shared portal access</p>
-          <h2>{portal === 'patient' ? 'Patient Portal Sign In' : 'Staff Portal Sign In'}</h2>
+          <h1 className="auth-card-title">{portal === 'patient' ? 'Patient Portal Sign In' : 'Staff Portal Sign In'}</h1>
           <p className="auth-card-description">
             {portal === 'patient'
               ? 'Enter your email and password to access your patient care tools.'

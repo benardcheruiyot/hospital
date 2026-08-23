@@ -595,6 +595,7 @@ textarea:focus-visible {
 
 .auth-title,
 .auth-card h2,
+.auth-card-title,
 .reference-hero h1,
 .reference-portal-card h3,
 .dashboard-hero-copy h1,
@@ -1175,11 +1176,15 @@ textarea:focus {
 }
 
 .landing-access-label {
-  color: var(--color-accent);
+  color: #075985;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.landing-access-card-dark .landing-access-label {
+  color: #bae6fd;
 }
 
 .landing-access-card h3,

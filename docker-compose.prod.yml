@@ -63,13 +63,6 @@ services:
         max-file: "3"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        VITE_API_URL: ${API_URL:-/api}
-        VITE_SOCKET_URL: ${SOCKET_URL:-}
-        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     image: ${FRONTEND_IMAGE:-ghcr.io/benardcheruiyot/hospital/frontend:latest}
     restart: always
     depends_on:

@@ -136,7 +136,7 @@ export default function PatientsPage() {
       <section className="hero-card">
         <div>
           <div className="page-eyebrow">Registration operations</div>
-          <h2 style={{ margin: '4px 0 10px' }}>Registered Patients</h2>
+          <h1 style={{ margin: '4px 0 10px' }}>Registered Patients</h1>
           <p className="section-copy" style={{ maxWidth: 720 }}>
             Monitor intake readiness, profile verification, and contact data quality across the patient population from one modern operations view.
           </p>
